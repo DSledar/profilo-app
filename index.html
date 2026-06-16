@@ -13,7 +13,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <style>
@@ -82,7 +81,13 @@ img{max-width:100%}
 .btn-d:hover:not(:disabled){background:rgba(255,69,96,.18)}
 .btn-ok{background:linear-gradient(135deg,#00d48e,#00b87a);color:#fff}
 .btn-ok:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,212,142,.3)}
-.btn-sm{padding:7px 13px;font-size:.78rem;border-radius:var(--r-xs)}
+.btn-google{
+  background:#fff;color:#3c4043;border:1.5px solid #dadce0;
+  font-weight:700;font-size:.88rem;
+  transition:all .18s var(--ease);
+}
+.btn-google:hover{background:#f8f9fa;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.btn-google img{width:18px;height:18px;flex-shrink:0}
 .btn-lg{padding:14px 26px;font-size:.95rem}
 .btn-blk{width:100%}
 .btn:disabled{opacity:.45;cursor:not-allowed;transform:none!important}
@@ -352,12 +357,12 @@ table.dt{width:100%;border-collapse:collapse;font-size:.83rem}
    CONFIGURATION  ←  FILL THESE IN
 ═══════════════════════════════════════════ */
 const firebaseConfig = {
-  apiKey: "AIzaSyBwrSdaO4J-Yd-xrvmfo5tye3PL2B_0sOU",
-  authDomain: "qr-code-generator-d6e0f.firebaseapp.com",
-  projectId: "qr-code-generator-d6e0f",
-  storageBucket: "qr-code-generator-d6e0f.firebasestorage.app",
-  messagingSenderId: "533616906943",
-  appId: "1:533616906943:web:302c389237e528c9012c0a"
+  apiKey: "AIzaSyB6rcwRc3MIaRizSqGpfZDEGdGcAwvTgFo",
+  authDomain: "profilo-app-92bc4.firebaseapp.com",
+  projectId: "profilo-app-92bc4",
+  storageBucket: "profilo-app-92bc4.firebasestorage.app",
+  messagingSenderId: "1053297665255",
+  appId: "1:1053297665255:web:d0449a7783566e02ac2e42"
 };
 const ADMIN_EMAIL   = "abdulrahmanawl90@gmail.com"; // ← your email
 const ADMIN_WA      = "9647725294559";         // ← 964 + 7725294559
@@ -396,9 +401,8 @@ const TPLS = [
    FIREBASE
 ═══════════════════════════════════════════ */
 firebase.initializeApp(FIREBASE_CONFIG);
-const auth    = firebase.auth();
-const db      = firebase.firestore();
-const storage = firebase.storage();
+const auth = firebase.auth();
+const db   = firebase.firestore();
 
 /* ═══════════════════════════════════════════
    STATE
@@ -467,6 +471,19 @@ async function doReg(nm,em,pw){
   } catch(e){ toast(aerr(e.code),'e') }
 }
 async function doLogout(){ await auth.signOut(); go(''); toast('Logged out','i') }
+async function doGoogle(){
+  try{
+    const provider=new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({prompt:'select_account'});
+    const result=await auth.signInWithPopup(provider);
+    const isNew=result.additionalUserInfo?.isNewUser;
+    S.user=result.user; await loadUD(result.user.uid);
+    toast(isNew?'Account created! Welcome 🎉':'Welcome back 👋','s');
+    go('dashboard');
+  } catch(e){
+    if(e.code!=='auth/popup-closed-by-user') toast(aerr(e.code),'e');
+  }
+}
 function aerr(c){
   return ({
     'auth/user-not-found':'No account with that email.',
@@ -476,6 +493,8 @@ function aerr(c){
     'auth/weak-password':'Password must be 6+ characters.',
     'auth/invalid-email':'Invalid email address.',
     'auth/too-many-requests':'Too many attempts. Try again later.',
+    'auth/popup-blocked':'Popup blocked — allow popups and try again.',
+    'auth/cancelled-popup-request':'Sign-in cancelled.',
   })[c] || 'Something went wrong. Try again.';
 }
 
@@ -552,33 +571,73 @@ async function getProfileByUN(un){
 }
 
 /* ═══════════════════════════════════════════
-   PAYMENT
+   IMAGE COMPRESSOR  (no Storage needed — free!)
+   Shrinks screenshot → JPEG base64 stored in Firestore
+═══════════════════════════════════════════ */
+function compressImage(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onerror=reject;
+    reader.onload=e=>{
+      const img=new Image();
+      img.onerror=reject;
+      img.onload=()=>{
+        const MAX=900;
+        let w=img.width, h=img.height;
+        if(w>h){ if(w>MAX){h=Math.round(h*MAX/w);w=MAX} }
+        else    { if(h>MAX){w=Math.round(w*MAX/h);h=MAX} }
+        const cv=document.createElement('canvas');
+        cv.width=w; cv.height=h;
+        cv.getContext('2d').drawImage(img,0,0,w,h);
+        resolve(cv.toDataURL('image/jpeg',0.65));
+      };
+      img.src=e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ═══════════════════════════════════════════
+   PAYMENT  (100 % free — Firestore only)
 ═══════════════════════════════════════════ */
 async function submitPayment({nm,ph,method,type,tplId,file}){
   try{
+    toast('Compressing screenshot…','i');
+    const b64=await compressImage(file);
+
+    // Firestore doc limit is ~1 MB; typical compressed screenshot ≈ 150-400 KB
+    if(b64.length>950000){
+      toast('Screenshot is too large even after compression. Please crop/resize it first.','e');
+      return null;
+    }
+
     const oid=db.collection('orders').doc().id;
-    const ext=file.name.split('.').pop();
-    toast('Uploading screenshot…','i');
-    const snap=await storage.ref(`payments/${oid}/screenshot.${ext}`).put(file);
-    const url=await snap.ref.getDownloadURL();
     const od={
-      id:oid,userId:S.user.uid,userEmail:S.user.email,
-      userName:nm,phone:ph,paymentMethod:method,
-      type,templateId:tplId||null,screenshotUrl:url,status:'pending',
+      id:oid, userId:S.user.uid, userEmail:S.user.email,
+      userName:nm, phone:ph, paymentMethod:method,
+      type, templateId:tplId||null,
+      screenshotBase64: b64,          // stored directly in Firestore ✅ free
+      status:'pending',
       amount:type==='template'?TPL_PRICE:XTRA_PRICE,
       createdAt:firebase.firestore.FieldValue.serverTimestamp()
     };
     await db.collection('orders').doc(oid).set(od);
-    const typeText = type==='template' ? `Template Unlock (${tplId})` : 'Extra Profile Slot';
+
+    const typeText=type==='template'?`Template Unlock (${tplId})`:'Extra Profile Slot';
     const msg=encodeURIComponent(
       `🟣 *New Profilo Payment*\n\n`+
       `👤 Name: ${nm}\n📧 Email: ${S.user.email}\n📱 Phone: ${ph}\n`+
       `💰 For: ${typeText}\n💳 Method: ${method.toUpperCase()}\n`+
-      `🆔 Order: ${oid}\n\nPlease verify and approve.`
+      `🆔 Order: ${oid}\n\nScreenshot saved. Please check admin panel & approve.`
     );
     window.open(`https://wa.me/${ADMIN_WA}?text=${msg}`,'_blank');
-    toast('Submitted! We\'ll review shortly 📱','s'); return oid;
-  } catch(e){ console.error(e); toast('Submission failed. Try again.','e'); return null }
+    toast("Submitted! We'll review shortly 📱",'s');
+    return oid;
+  } catch(e){
+    console.error(e);
+    toast('Submission failed. Try again.','e');
+    return null;
+  }
 }
 
 /* ═══════════════════════════════════════════
@@ -733,6 +792,11 @@ function renderLand(){
         <div class="fg"><label class="lbl">Password</label>
           <div class="ig"><i class="fas fa-lock ic"></i><input class="fi" type="password" id="l-pw" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')hLogin()"/></div></div>
         <button class="btn btn-p btn-blk btn-lg mt4" onclick="hLogin()"><i class="fas fa-right-to-bracket"></i> Login</button>
+        <div class="or-div">or</div>
+        <button class="btn btn-google btn-blk btn-lg" onclick="doGoogle()">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google"/>
+          Continue with Google
+        </button>
       </div>
       <div id="f-re" class="hid">
         <div class="fg"><label class="lbl">Full Name</label>
@@ -742,6 +806,11 @@ function renderLand(){
         <div class="fg"><label class="lbl">Password</label>
           <div class="ig"><i class="fas fa-lock ic"></i><input class="fi" type="password" id="r-pw" placeholder="Min. 6 characters" autocomplete="new-password" onkeydown="if(event.key==='Enter')hReg()"/></div></div>
         <button class="btn btn-p btn-blk btn-lg mt4" onclick="hReg()"><i class="fas fa-user-plus"></i> Create Account</button>
+        <div class="or-div">or</div>
+        <button class="btn btn-google btn-blk btn-lg" onclick="doGoogle()">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google"/>
+          Sign up with Google
+        </button>
       </div>
     </div>
     <p class="ts tm tc" style="margin-top:22px">🔒 Secure · Mobile-friendly · Free to start</p>
@@ -1197,7 +1266,11 @@ async function loadAdmTab(t){
           <td style="font-size:.8rem;font-weight:700">${(o.paymentMethod||'').toUpperCase()}</td>
           <td style="font-size:.8rem;font-weight:800">${o.amount||'—'}</td>
           <td><span class="sb sb-${o.status==='approved'?'ok':o.status==='rejected'?'rej':'pend'}">${o.status}</span></td>
-          <td>${o.screenshotUrl?`<a href="${o.screenshotUrl}" target="_blank" class="btn btn-g btn-sm"><i class="fas fa-image"></i> View</a>`:'—'}</td>
+          <td>${o.screenshotBase64
+            ?`<img src="${o.screenshotBase64}"
+                style="width:52px;height:52px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid var(--border)"
+                onclick="viewImg(this.src)" title="Click to enlarge"/>`
+            :'—'}</td>
           <td>${o.status==='pending'?`<div style="display:flex;gap:6px">
             <button class="btn btn-ok btn-sm" onclick="admApprove('${o.id}','${o.userId}','${o.type}','${o.templateId||''}')">✓</button>
             <button class="btn btn-d btn-sm" onclick="admReject('${o.id}')">✗</button>
@@ -1253,6 +1326,15 @@ async function admReject(oid){
     await db.collection('orders').doc(oid).update({status:'rejected'});
     toast('Order rejected.','i'); loadAdmTab('orders');
   } catch(e){ toast('Failed to reject.','e') }
+}
+
+/* ── view full screenshot in modal ── */
+function viewImg(src){
+  modal(`
+    <button class="mcl" onclick="closeMdl()"><i class="fas fa-times"></i></button>
+    <div class="mttl">Payment Screenshot</div>
+    <img src="${src}" style="width:100%;border-radius:var(--r-md);margin-top:4px"/>
+  `);
 }
 
 /* ═══════════════════════════════════════════
