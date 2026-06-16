@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <meta name="description" content="Profilo – Share all your social links in one beautiful page"/>
+  <title>Profilo – Your Digital Identity</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07070f;--surface:#0f0f1e;--card:#161626;--card2:#1c1c30;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#eeeeff;--muted:#7878a8;
+  --primary:#7c6eff;--primary-d:#6052e0;--primary-glow:rgba(124,110,255,0.28);
+  --accent:#ff6b9d;--success:#00d48e;--warn:#ffa836;--err:#ff4560;
+  --r-xs:6px;--r-sm:10px;--r-md:14px;--r-lg:20px;--r-xl:26px;
+  --sh:0 4px 28px rgba(0,0,0,0.55);
+  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --ease:cubic-bezier(.4,0,.2,1);
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100dvh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+button{cursor:pointer;font-family:var(--font)}
+input,textarea,select{font-family:var(--font)}
+a{color:inherit;text-decoration:none}
+img{max-width:100%}
+
+/* ── LAYOUT ── */
+#app{min-height:100dvh}
+.pg{min-height:100dvh}
+.wrap{max-width:460px;margin:0 auto;padding:0 16px}
+.wrap-lg{max-width:980px;margin:0 auto;padding:0 16px}
+
+/* ── NAVBAR ── */
+.nav{
+  position:sticky;top:0;z-index:90;
+  background:rgba(7,7,15,0.88);
+  backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+  border-bottom:1px solid var(--border);
+  height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;
+}
+.nav-logo{
+  font-size:1.35rem;font-weight:900;letter-spacing:-.03em;cursor:pointer;
+  background:linear-gradient(130deg,var(--primary),var(--accent));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.nav-r{display:flex;align-items:center;gap:10px}
+.nav-av{
+  width:34px;height:34px;border-radius:50%;cursor:pointer;
+  background:linear-gradient(135deg,var(--primary),var(--accent));
+  display:flex;align-items:center;justify-content:center;
+  font-size:.78rem;font-weight:800;color:#fff;flex-shrink:0;
+  transition:transform .18s var(--ease);
+}
+.nav-av:hover{transform:scale(1.08)}
+
+/* ── BUTTONS ── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:11px 20px;border-radius:var(--r-sm);
+  font-size:.88rem;font-weight:700;border:none;
+  transition:all .18s var(--ease);white-space:nowrap;cursor:pointer;
+}
+.btn-p{background:linear-gradient(135deg,var(--primary),var(--primary-d));color:#fff;box-shadow:0 0 22px var(--primary-glow)}
+.btn-p:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 24px var(--primary-glow)}
+.btn-s{background:var(--card2);color:var(--text);border:1px solid var(--border)}
+.btn-s:hover:not(:disabled){background:rgba(255,255,255,0.07);border-color:var(--border2)}
+.btn-g{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-g:hover:not(:disabled){color:var(--text);border-color:var(--border2)}
+.btn-d{background:rgba(255,69,96,.1);color:var(--err);border:1px solid rgba(255,69,96,.25)}
+.btn-d:hover:not(:disabled){background:rgba(255,69,96,.18)}
+.btn-ok{background:linear-gradient(135deg,#00d48e,#00b87a);color:#fff}
+.btn-ok:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,212,142,.3)}
+.btn-sm{padding:7px 13px;font-size:.78rem;border-radius:var(--r-xs)}
+.btn-lg{padding:14px 26px;font-size:.95rem}
+.btn-blk{width:100%}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none!important}
+
+/* ── FORMS ── */
+.fg{margin-bottom:17px}
+.lbl{display:block;font-size:.73rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}
+.fi{
+  width:100%;background:rgba(255,255,255,0.04);
+  border:1.5px solid var(--border);border-radius:var(--r-sm);
+  padding:12px 15px;color:var(--text);font-size:.92rem;
+  transition:all .18s var(--ease);outline:none;-webkit-appearance:none;
+}
+.fi:focus{border-color:var(--primary);background:rgba(124,110,255,.05);box-shadow:0 0 0 3px rgba(124,110,255,.13)}
+.fi::placeholder{color:rgba(255,255,255,.22)}
+textarea.fi{resize:vertical;min-height:88px;line-height:1.6}
+.ig{position:relative}
+.ig .ic{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.85rem;width:15px;text-align:center;pointer-events:none}
+.ig input{padding-left:40px}
+.fhint{font-size:.73rem;color:var(--muted);margin-top:5px}
+
+/* ── CARD ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:22px}
+
+/* ── TABS ── */
+.tabs{display:flex;background:var(--surface);border-radius:var(--r-sm);padding:4px;margin-bottom:20px}
+.tbn{flex:1;padding:9px;text-align:center;border-radius:calc(var(--r-sm) - 2px);font-size:.83rem;font-weight:700;color:var(--muted);background:transparent;border:none;cursor:pointer;transition:all .18s var(--ease)}
+.tbn.on{background:var(--card);color:var(--text);box-shadow:var(--sh)}
+
+/* ── TOAST ── */
+#tc{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  z-index:9999;display:flex;flex-direction:column-reverse;gap:8px;
+  width:calc(100% - 32px);max-width:350px;pointer-events:none;
+}
+.toast{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r-md);
+  padding:13px 16px;display:flex;align-items:flex-start;gap:11px;
+  font-size:.86rem;line-height:1.45;box-shadow:var(--sh);
+  animation:tIn .32s cubic-bezier(.34,1.56,.64,1);pointer-events:all;
+}
+.toast.rem{animation:tOut .22s ease forwards}
+.tic{font-size:.95rem;flex-shrink:0;margin-top:1px}
+.toast-s .tic{color:var(--success)}.toast-e .tic{color:var(--err)}
+.toast-i .tic{color:var(--primary)}.toast-w .tic{color:var(--warn)}
+@keyframes tIn{from{opacity:0;transform:translateY(12px) scale(.95)}to{opacity:1;transform:none}}
+@keyframes tOut{to{opacity:0;transform:translateY(8px) scale(.95)}}
+
+/* ── MODAL ── */
+.mbk{
+  position:fixed;inset:0;background:rgba(0,0,0,.78);
+  backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
+  z-index:300;display:flex;align-items:center;justify-content:center;
+  padding:16px;animation:bkIn .2s ease;
+}
+@keyframes bkIn{from{opacity:0}to{opacity:1}}
+.mbox{
+  background:var(--card);border:1px solid var(--border2);border-radius:var(--r-xl);
+  padding:26px;width:100%;max-width:370px;position:relative;
+  animation:mIn .3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes mIn{from{transform:scale(.88);opacity:0}to{transform:scale(1);opacity:1}}
+.mcl{
+  position:absolute;top:13px;right:13px;width:28px;height:28px;
+  border-radius:50%;background:rgba(255,255,255,.07);border:none;
+  color:var(--muted);display:flex;align-items:center;justify-content:center;
+  font-size:.8rem;cursor:pointer;transition:all .18s var(--ease);
+}
+.mcl:hover{background:rgba(255,255,255,.13);color:var(--text)}
+.mttl{font-size:1.05rem;font-weight:800;margin-bottom:16px}
+
+/* ── LANDING ── */
+.land{
+  min-height:100dvh;
+  background:radial-gradient(ellipse 70% 55% at 50% -5%,rgba(124,110,255,.2) 0%,transparent 65%),
+             radial-gradient(ellipse 45% 45% at 85% 90%,rgba(255,107,157,.12) 0%,transparent 55%),
+             var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 16px;
+}
+.land-logo-wrap{margin-bottom:32px;text-align:center}
+.land-logo{
+  font-size:2.9rem;font-weight:900;letter-spacing:-.04em;display:block;
+  background:linear-gradient(130deg,var(--primary),var(--accent));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.land-tag{color:var(--muted);font-size:.92rem;margin-top:7px}
+.auth-card{width:100%;max-width:395px;background:var(--card);border:1px solid var(--border);border-radius:var(--r-xl);padding:28px 24px}
+
+/* ── DASHBOARD ── */
+.dash-hd{padding:26px 16px 16px}
+.dash-hi{font-size:1.5rem;font-weight:900;letter-spacing:-.02em;margin-bottom:3px}
+.dash-sub{color:var(--muted);font-size:.86rem}
+
+.pc{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;margin-bottom:11px;transition:all .2s var(--ease)}
+.pc:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:var(--sh)}
+.pc-top{display:flex;align-items:center;gap:13px;margin-bottom:13px}
+.pc-av{
+  width:48px;height:48px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--primary),var(--accent));
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.05rem;font-weight:800;color:#fff;
+}
+.pc-inf{flex:1;min-width:0}
+.pc-name{font-size:.95rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.pc-usr{font-size:.76rem;color:var(--muted)}
+.pc-tpl{font-size:.68rem;padding:3px 9px;border-radius:20px;font-weight:700;background:rgba(124,110,255,.12);color:var(--primary);border:1px solid rgba(124,110,255,.2);white-space:nowrap}
+.pc-acts{display:flex;gap:7px;flex-wrap:wrap}
+
+/* ── LIMIT BAR ── */
+.lim{background:var(--card);border:1px solid var(--border);border-radius:var(--r-md);padding:15px;margin-bottom:16px}
+.lim-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:.82rem}
+.lim-bar{height:5px;background:rgba(255,255,255,.06);border-radius:10px;overflow:hidden}
+.lim-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:10px;transition:width .5s ease}
+
+/* ── CREATE / EDIT ── */
+.cr-pg{padding-bottom:60px}
+.pg-hd{padding:26px 16px 0}
+.pg-back{display:inline-flex;align-items:center;gap:7px;color:var(--muted);font-size:.83rem;margin-bottom:11px;cursor:pointer;transition:color .18s var(--ease)}
+.pg-back:hover{color:var(--text)}
+.pg-h1{font-size:1.5rem;font-weight:900;letter-spacing:-.02em;margin-bottom:3px}
+.pg-hint{color:var(--muted);font-size:.84rem}
+
+.sep{display:flex;align-items:center;gap:10px;margin:18px 0 14px}
+.sep::before,.sep::after{content:'';flex:1;height:1px;background:var(--border)}
+.sep-lbl{font-size:.7rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;white-space:nowrap}
+
+/* ── TEMPLATES ── */
+.tpl-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+.tpl-card{border-radius:var(--r-md);border:2px solid var(--border);overflow:hidden;cursor:pointer;transition:all .18s var(--ease);position:relative}
+.tpl-card.sel{border-color:var(--primary);box-shadow:0 0 0 3px rgba(124,110,255,.22)}
+.tpl-card.lkd{cursor:default}
+.tpl-card:not(.lkd):not(.sel):hover{border-color:var(--border2);transform:translateY(-2px)}
+.tpl-prev{height:70px;display:flex;align-items:center;justify-content:center;font-size:1.7rem;position:relative}
+.tpl-meta{padding:8px 10px;background:rgba(0,0,0,.32)}
+.tpl-nm{font-size:.76rem;font-weight:800;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bdg{display:inline-flex;align-items:center;gap:3px;font-size:.64rem;font-weight:800;padding:2px 7px;border-radius:20px}
+.bdg-f{background:rgba(0,212,142,.14);color:var(--success)}
+.bdg-p{background:rgba(255,168,54,.14);color:var(--warn)}
+.bdg-u{background:rgba(124,110,255,.14);color:var(--primary)}
+.lk-ov{position:absolute;inset:0;background:rgba(0,0,0,.52);display:flex;align-items:center;justify-content:center}
+.lk-btn{width:34px;height:34px;border-radius:50%;background:rgba(255,168,54,.15);border:1px solid rgba(255,168,54,.35);display:flex;align-items:center;justify-content:center;color:var(--warn);font-size:.85rem;cursor:pointer;transition:all .18s var(--ease)}
+.lk-btn:hover{background:rgba(255,168,54,.28)}
+
+/* ── PUBLIC PROFILE ── */
+.pub-pg{min-height:100dvh;background:var(--p-bg,#0d1117);display:flex;flex-direction:column;align-items:center;padding:44px 16px 64px}
+.pub-in{width:100%;max-width:420px}
+.pub-hd{text-align:center;margin-bottom:30px}
+.pub-av{
+  width:88px;height:88px;border-radius:50%;
+  background:var(--p-av-bg,#21262d);color:var(--p-av-tx,#58a6ff);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.9rem;font-weight:900;margin:0 auto 15px;
+  border:3px solid var(--p-btn-br,#30363d);
+}
+.pub-name{font-family:var(--font);color:var(--p-tx,#f0f6fc);font-size:1.45rem;font-weight:900;letter-spacing:-.02em;margin-bottom:3px}
+.pub-handle{color:var(--p-sub,#8b949e);font-size:.84rem}
+.pub-bio{color:var(--p-sub,#8b949e);font-size:.9rem;margin-top:12px;line-height:1.65}
+.pub-links{display:flex;flex-direction:column;gap:11px}
+.pub-lnk{
+  display:flex;align-items:center;gap:13px;
+  padding:14px 18px;
+  background:var(--p-btn-bg,#21262d);
+  border:1.5px solid var(--p-btn-br,#30363d);
+  border-radius:14px;
+  color:var(--p-btn-tx,#f0f6fc);
+  font-family:var(--font);font-size:.9rem;font-weight:700;
+  cursor:pointer;transition:all .18s ease;text-decoration:none;
+}
+.pub-lnk:hover{background:var(--p-btn-hv,#30363d);transform:translateY(-2px)}
+.pub-lic{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.05rem;flex-shrink:0}
+.sn-ic{background:rgba(255,252,0,.15);color:#FFFC00}
+.tk-ic{background:rgba(255,255,255,.1);color:#fff}
+.fb-ic{background:rgba(24,119,242,.15);color:#1877F2}
+.tg-ic{background:rgba(0,136,204,.15);color:#0088CC}
+.ig-ic{background:rgba(228,64,95,.15);color:#E4405F}
+.pub-ft{text-align:center;margin-top:46px;color:var(--p-sub,#8b949e);font-size:.75rem}
+.pub-ft a{color:var(--p-acc,#58a6ff);font-weight:700}
+
+/* ── QR MODAL ── */
+.qr-wrap{text-align:center}
+#qr-cv{display:flex;align-items:center;justify-content:center;padding:14px;background:#fff;border-radius:var(--r-md);margin:14px 0}
+.qr-url{font-size:.75rem;color:var(--muted);word-break:break-all;margin-bottom:14px;padding:9px;background:rgba(255,255,255,.04);border-radius:var(--r-sm);border:1px solid var(--border)}
+.qr-acts{display:flex;gap:8px}
+
+/* ── PAYMENT ── */
+.pay-pg{padding-bottom:60px}
+.pay-box{background:rgba(124,110,255,.07);border:1px solid rgba(124,110,255,.22);border-radius:var(--r-md);padding:17px;margin-bottom:18px}
+.pay-ttl{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--primary);margin-bottom:6px}
+.pay-num{font-size:1.55rem;font-weight:900;letter-spacing:.04em}
+.pay-steps{margin-bottom:4px}
+.pay-step{display:flex;gap:13px;margin-bottom:14px}
+.ps-n{width:27px;height:27px;border-radius:50%;background:rgba(124,110,255,.15);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:.76rem;font-weight:900;flex-shrink:0;margin-top:2px}
+.ps-t{font-size:.86rem;color:var(--muted);line-height:1.55;padding-top:4px}
+.mth-sel{display:flex;gap:10px;margin-bottom:14px}
+.mth-btn{flex:1;padding:14px;border-radius:var(--r-sm);border:2px solid var(--border);background:transparent;color:var(--muted);font-weight:800;font-size:.88rem;cursor:pointer;transition:all .18s var(--ease);text-align:center}
+.mth-btn.on{border-color:var(--primary);background:rgba(124,110,255,.1);color:var(--primary)}
+.upd{border:2px dashed var(--border);border-radius:var(--r-md);padding:28px 16px;text-align:center;cursor:pointer;transition:all .18s var(--ease);position:relative}
+.upd:hover,.upd.dg{border-color:var(--primary);background:rgba(124,110,255,.05)}
+.upd input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+#upd-prev{max-width:170px;margin:11px auto 0;border-radius:var(--r-sm);display:none}
+
+/* ── ADMIN ── */
+.adm-pg{padding-bottom:60px}
+.adm-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:18px}
+.st-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-md);padding:17px;text-align:center}
+.st-n{font-size:1.9rem;font-weight:900;color:var(--primary);line-height:1;margin-bottom:3px}
+.st-l{font-size:.72rem;color:var(--muted);font-weight:700}
+.adm-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.at-btn{padding:7px 16px;border-radius:var(--r-sm);background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:.8rem;font-weight:800;cursor:pointer;transition:all .18s var(--ease)}
+.at-btn.on{background:var(--primary);border-color:var(--primary);color:#fff}
+.tbl-wrap{border-radius:var(--r-md);border:1px solid var(--border);overflow:hidden;overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.dt{width:100%;border-collapse:collapse;font-size:.83rem}
+.dt th{text-align:left;padding:11px 13px;color:var(--muted);font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);white-space:nowrap}
+.dt td{padding:11px 13px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
+.dt tr:last-child td{border-bottom:none}
+.dt tbody tr:hover td{background:rgba(255,255,255,.02)}
+.sb{padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:800}
+.sb-pend{background:rgba(255,168,54,.12);color:var(--warn)}
+.sb-ok{background:rgba(0,212,142,.12);color:var(--success)}
+.sb-rej{background:rgba(255,69,96,.12);color:var(--err)}
+
+/* ── LOADER & EMPTY ── */
+.pg-ld{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--muted);font-size:.88rem}
+.spin{width:38px;height:38px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:50px 20px}
+.empty-e{font-size:3.5rem;margin-bottom:13px}
+.empty-t{font-size:1.05rem;font-weight:800;margin-bottom:7px}
+.empty-s{color:var(--muted);font-size:.86rem;margin-bottom:20px}
+
+/* ── UTILS ── */
+.hid{display:none!important}
+.row{display:flex;align-items:center}
+.col{flex-direction:column}
+.jb{justify-content:space-between}
+.g2{gap:8px}.g3{gap:12px}
+.mt2{margin-top:8px}.mt3{margin-top:12px}.mt4{margin-top:16px}
+.mb4{margin-bottom:16px}
+.tc{text-align:center}
+.tm{color:var(--muted)}
+.ts{font-size:.83rem}
+.fw{font-weight:800}
+.w100{width:100%}
+.div{height:1px;background:var(--border);margin:18px 0}
+.or-div{display:flex;align-items:center;gap:11px;color:var(--muted);font-size:.76rem;margin:16px 0}
+.or-div::before,.or-div::after{content:'';flex:1;height:1px;background:var(--border)}
+.flex-1{flex:1}
+
+/* ── RESPONSIVE ── */
+@media(min-width:600px){
+  .adm-stats{grid-template-columns:repeat(4,1fr)}
+  .tpl-grid{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:380px){
+  .pc-acts .btn{font-size:.72rem;padding:6px 10px}
+}
+</style>
+</head>
+<body>
+<div id="app"><div class="pg-ld"><div class="spin"></div><span>Loading Profilo…</span></div></div>
+<div id="tc"></div>
+
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════════
+   CONFIGURATION  ←  FILL THESE IN
+═══════════════════════════════════════════ */
+const firebaseConfig = {
+  apiKey: "AIzaSyBwrSdaO4J-Yd-xrvmfo5tye3PL2B_0sOU",
+  authDomain: "qr-code-generator-d6e0f.firebaseapp.com",
+  projectId: "qr-code-generator-d6e0f",
+  storageBucket: "qr-code-generator-d6e0f.firebasestorage.app",
+  messagingSenderId: "533616906943",
+  appId: "1:533616906943:web:302c389237e528c9012c0a"
+};
+const ADMIN_EMAIL   = "abdulrahmanawl90@gmail.com"; // ← your email
+const ADMIN_WA      = "9647725294559";         // ← 964 + 7725294559
+const ADMIN_PHONE   = "0772 529 4559";
+const FREE_LIMIT    = 2;
+const TPL_PRICE     = "3,000 IQD";
+const XTRA_PRICE    = "5,000 IQD";
+
+/* ═══════════════════════════════════════════
+   TEMPLATES
+═══════════════════════════════════════════ */
+const TPLS = [
+  { id:'classic-dark', nm:'Classic Dark',  em:'🌑', free:true,  bg:'linear-gradient(155deg,#0d1117,#161b22)',
+    v:{'--p-bg':'#0d1117','--p-tx':'#f0f6fc','--p-sub':'#8b949e','--p-btn-bg':'#21262d','--p-btn-br':'#30363d','--p-btn-tx':'#f0f6fc','--p-btn-hv':'#30363d','--p-acc':'#58a6ff','--p-av-bg':'#21262d','--p-av-tx':'#58a6ff'}},
+  { id:'clean-light',  nm:'Clean Light',   em:'☀️', free:true,  bg:'#f0f0f8',
+    v:{'--p-bg':'#f0f0f8','--p-tx':'#1a1a2e','--p-sub':'#57606a','--p-btn-bg':'#ffffff','--p-btn-br':'#d0d7de','--p-btn-tx':'#1a1a2e','--p-btn-hv':'#f0f0f8','--p-acc':'#0969da','--p-av-bg':'#e8f0fe','--p-av-tx':'#0969da'}},
+  { id:'sunset',       nm:'Sunset',        em:'🌅', free:true,  bg:'linear-gradient(135deg,#667eea,#764ba2)',
+    v:{'--p-bg':'linear-gradient(135deg,#667eea 0%,#764ba2 100%)','--p-tx':'#ffffff','--p-sub':'rgba(255,255,255,.72)','--p-btn-bg':'rgba(255,255,255,.15)','--p-btn-br':'rgba(255,255,255,.32)','--p-btn-tx':'#ffffff','--p-btn-hv':'rgba(255,255,255,.24)','--p-acc':'#ffffff','--p-av-bg':'rgba(255,255,255,.22)','--p-av-tx':'#ffffff'}},
+  { id:'neon-night',   nm:'Neon Night',    em:'💚', free:false, bg:'#050505',
+    v:{'--p-bg':'#050505','--p-tx':'#ffffff','--p-sub':'#4b5563','--p-btn-bg':'rgba(0,255,135,.05)','--p-btn-br':'#00ff87','--p-btn-tx':'#00ff87','--p-btn-hv':'rgba(0,255,135,.13)','--p-acc':'#00ff87','--p-av-bg':'rgba(0,255,135,.1)','--p-av-tx':'#00ff87'}},
+  { id:'forest',       nm:'Forest',        em:'🌿', free:false, bg:'linear-gradient(135deg,#134e4a,#064e3b)',
+    v:{'--p-bg':'linear-gradient(135deg,#134e4a 0%,#064e3b 100%)','--p-tx':'#ecfdf5','--p-sub':'#a7f3d0','--p-btn-bg':'rgba(110,231,183,.08)','--p-btn-br':'#6ee7b7','--p-btn-tx':'#6ee7b7','--p-btn-hv':'rgba(110,231,183,.18)','--p-acc':'#34d399','--p-av-bg':'rgba(52,211,153,.15)','--p-av-tx':'#34d399'}},
+  { id:'ocean',        nm:'Ocean Deep',    em:'🌊', free:false, bg:'linear-gradient(180deg,#0c1445,#0d47a1)',
+    v:{'--p-bg':'linear-gradient(180deg,#0c1445 0%,#0d47a1 100%)','--p-tx':'#e8eaf6','--p-sub':'#b3c5ff','--p-btn-bg':'rgba(130,177,255,.08)','--p-btn-br':'#82b1ff','--p-btn-tx':'#82b1ff','--p-btn-hv':'rgba(130,177,255,.17)','--p-acc':'#82b1ff','--p-av-bg':'rgba(130,177,255,.12)','--p-av-tx':'#82b1ff'}},
+  { id:'biz-pro',      nm:'Business Pro',  em:'💼', free:false, bg:'#111827',
+    v:{'--p-bg':'#111827','--p-tx':'#f9fafb','--p-sub':'#9ca3af','--p-btn-bg':'#374151','--p-btn-br':'#4b5563','--p-btn-tx':'#f9fafb','--p-btn-hv':'#4b5563','--p-acc':'#f59e0b','--p-av-bg':'rgba(245,158,11,.12)','--p-av-tx':'#f59e0b'}},
+  { id:'retro-wave',   nm:'Retro Wave',    em:'🎸', free:false, bg:'linear-gradient(180deg,#0f0024,#2d0060)',
+    v:{'--p-bg':'linear-gradient(180deg,#0f0024 0%,#2d0060 100%)','--p-tx':'#ffffff','--p-sub':'#cc88ff','--p-btn-bg':'transparent','--p-btn-br':'#ff0080','--p-btn-tx':'#ff0080','--p-btn-hv':'rgba(255,0,128,.1)','--p-acc':'#ff0080','--p-av-bg':'rgba(255,0,128,.12)','--p-av-tx':'#ff0080'}},
+  { id:'gold-lux',     nm:'Gold Luxury',   em:'✨', free:false, bg:'linear-gradient(160deg,#000,#1a1200)',
+    v:{'--p-bg':'linear-gradient(160deg,#000000 0%,#1a1200 100%)','--p-tx':'#f5e6c8','--p-sub':'#9c8a5a','--p-btn-bg':'rgba(212,175,55,.07)','--p-btn-br':'#d4af37','--p-btn-tx':'#d4af37','--p-btn-hv':'rgba(212,175,55,.15)','--p-acc':'#d4af37','--p-av-bg':'rgba(212,175,55,.1)','--p-av-tx':'#d4af37'}},
+  { id:'aurora',       nm:'Aurora',        em:'🌌', free:false, bg:'linear-gradient(135deg,#0f0c29,#302b63,#24243e)',
+    v:{'--p-bg':'linear-gradient(135deg,#0f0c29 0%,#302b63 50%,#24243e 100%)','--p-tx':'#f8f9fa','--p-sub':'#9ba4b5','--p-btn-bg':'rgba(123,237,159,.07)','--p-btn-br':'#7bed9f','--p-btn-tx':'#7bed9f','--p-btn-hv':'rgba(123,237,159,.15)','--p-acc':'#7bed9f','--p-av-bg':'rgba(123,237,159,.1)','--p-av-tx':'#7bed9f'}},
+];
+
+/* ═══════════════════════════════════════════
+   FIREBASE
+═══════════════════════════════════════════ */
+firebase.initializeApp(FIREBASE_CONFIG);
+const auth    = firebase.auth();
+const db      = firebase.firestore();
+const storage = firebase.storage();
+
+/* ═══════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════ */
+const S = { user:null, ud:null, loading:true };
+let route='', param='', param2='';
+let selTpl = 'classic-dark';
+let payFile = null, payMethod = 'fastpay';
+
+/* ═══════════════════════════════════════════
+   ROUTER
+═══════════════════════════════════════════ */
+function go(path){ window.location.hash = path ? '/'+path : '/' }
+function handleRoute(){
+  const h = window.location.hash.replace(/^#\/?/,'') || '';
+  const pts = h.split('/');
+  route  = pts[0] || '';
+  param  = pts[1] || '';
+  param2 = pts[2] || '';
+  render();
+}
+window.addEventListener('hashchange', handleRoute);
+
+/* ═══════════════════════════════════════════
+   AUTH STATE
+═══════════════════════════════════════════ */
+auth.onAuthStateChanged(async u => {
+  S.loading = false;
+  if(u){ S.user=u; await loadUD(u.uid); }
+  else { S.user=null; S.ud=null; }
+  handleRoute();
+});
+
+async function loadUD(uid){
+  try{
+    const d = await db.collection('users').doc(uid).get();
+    if(d.exists){ S.ud = d.data(); }
+    else{
+      const nd = {
+        email: S.user.email,
+        displayName: S.user.displayName||'',
+        profileCount:0, unlockedTemplates:[],
+        extraProfilesPaid:false,
+        isAdmin: S.user.email===ADMIN_EMAIL,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      await db.collection('users').doc(uid).set(nd);
+      S.ud = nd;
+    }
+  } catch(e){ console.error(e) }
+}
+
+/* ── AUTH FNS ── */
+async function doLogin(em,pw){
+  try{
+    await auth.signInWithEmailAndPassword(em,pw);
+    toast('Welcome back 👋','s'); go('dashboard');
+  } catch(e){ toast(aerr(e.code),'e') }
+}
+async function doReg(nm,em,pw){
+  try{
+    const c = await auth.createUserWithEmailAndPassword(em,pw);
+    await c.user.updateProfile({displayName:nm});
+    S.user=c.user; await loadUD(c.user.uid);
+    toast('Account created! Welcome 🎉','s'); go('dashboard');
+  } catch(e){ toast(aerr(e.code),'e') }
+}
+async function doLogout(){ await auth.signOut(); go(''); toast('Logged out','i') }
+function aerr(c){
+  return ({
+    'auth/user-not-found':'No account with that email.',
+    'auth/wrong-password':'Incorrect password.',
+    'auth/invalid-credential':'Invalid email or password.',
+    'auth/email-already-in-use':'Email already registered.',
+    'auth/weak-password':'Password must be 6+ characters.',
+    'auth/invalid-email':'Invalid email address.',
+    'auth/too-many-requests':'Too many attempts. Try again later.',
+  })[c] || 'Something went wrong. Try again.';
+}
+
+/* ═══════════════════════════════════════════
+   PROFILE FNS
+═══════════════════════════════════════════ */
+async function ckUser(un){ const d=await db.collection('usernames').doc(un).get(); return !d.exists }
+
+async function createProfile(data){
+  const uid=S.user.uid, ud=S.ud||{};
+  const max = ud.extraProfilesPaid ? FREE_LIMIT+2 : FREE_LIMIT;
+  if((ud.profileCount||0)>=max){ toast(`Profile limit reached (${max})`, 'e'); return null }
+  const un = data.username.toLowerCase().trim();
+  if(!await ckUser(un)){ toast('Username taken. Choose another.','e'); return null }
+  try{
+    const ref=db.collection('profiles').doc();
+    const pd={
+      id:ref.id, userId:uid, username:un,
+      displayName:data.displayName||'', bio:data.bio||'',
+      template:data.template, snapchat:data.snapchat||'',
+      tiktok:data.tiktok||'', facebook:data.facebook||'',
+      telegram:data.telegram||'', instagram:data.instagram||'',
+      createdAt:firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
+    };
+    const b=db.batch();
+    b.set(ref,pd);
+    b.set(db.collection('usernames').doc(un),{uid,profileId:ref.id});
+    b.update(db.collection('users').doc(uid),{profileCount:firebase.firestore.FieldValue.increment(1)});
+    await b.commit();
+    S.ud.profileCount=(S.ud.profileCount||0)+1;
+    toast('Profile created! 🎉','s'); return ref.id;
+  } catch(e){ console.error(e); toast('Failed to create profile. Try again.','e'); return null }
+}
+
+async function updProfile(pid,data,oldUN){
+  try{
+    const b=db.batch();
+    if(data.username && data.username!==oldUN){
+      if(!await ckUser(data.username)){ toast('Username taken.','e'); return false }
+      b.delete(db.collection('usernames').doc(oldUN));
+      b.set(db.collection('usernames').doc(data.username),{uid:S.user.uid,profileId:pid});
+    }
+    b.update(db.collection('profiles').doc(pid),{...data,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    await b.commit();
+    toast('Saved! ✅','s'); return true;
+  } catch(e){ console.error(e); toast('Update failed.','e'); return false }
+}
+
+async function delProfile(pid){
+  try{
+    const d=(await db.collection('profiles').doc(pid).get()).data();
+    const b=db.batch();
+    b.delete(db.collection('profiles').doc(pid));
+    b.delete(db.collection('usernames').doc(d.username));
+    b.update(db.collection('users').doc(S.user.uid),{profileCount:firebase.firestore.FieldValue.increment(-1)});
+    await b.commit();
+    S.ud.profileCount=Math.max(0,(S.ud.profileCount||0)-1);
+    toast('Profile deleted.','i');
+  } catch(e){ console.error(e); toast('Delete failed.','e') }
+}
+
+async function getUserProfiles(uid){
+  const s=await db.collection('profiles').where('userId','==',uid).get();
+  const list=s.docs.map(d=>({id:d.id,...d.data()}));
+  list.sort((a,b)=>(b.createdAt?.toMillis()||0)-(a.createdAt?.toMillis()||0));
+  return list;
+}
+
+async function getProfileByUN(un){
+  const s=await db.collection('profiles').where('username','==',un.toLowerCase()).limit(1).get();
+  if(s.empty) return null;
+  return {id:s.docs[0].id,...s.docs[0].data()};
+}
+
+/* ═══════════════════════════════════════════
+   PAYMENT
+═══════════════════════════════════════════ */
+async function submitPayment({nm,ph,method,type,tplId,file}){
+  try{
+    const oid=db.collection('orders').doc().id;
+    const ext=file.name.split('.').pop();
+    toast('Uploading screenshot…','i');
+    const snap=await storage.ref(`payments/${oid}/screenshot.${ext}`).put(file);
+    const url=await snap.ref.getDownloadURL();
+    const od={
+      id:oid,userId:S.user.uid,userEmail:S.user.email,
+      userName:nm,phone:ph,paymentMethod:method,
+      type,templateId:tplId||null,screenshotUrl:url,status:'pending',
+      amount:type==='template'?TPL_PRICE:XTRA_PRICE,
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    };
+    await db.collection('orders').doc(oid).set(od);
+    const typeText = type==='template' ? `Template Unlock (${tplId})` : 'Extra Profile Slot';
+    const msg=encodeURIComponent(
+      `🟣 *New Profilo Payment*\n\n`+
+      `👤 Name: ${nm}\n📧 Email: ${S.user.email}\n📱 Phone: ${ph}\n`+
+      `💰 For: ${typeText}\n💳 Method: ${method.toUpperCase()}\n`+
+      `🆔 Order: ${oid}\n\nPlease verify and approve.`
+    );
+    window.open(`https://wa.me/${ADMIN_WA}?text=${msg}`,'_blank');
+    toast('Submitted! We\'ll review shortly 📱','s'); return oid;
+  } catch(e){ console.error(e); toast('Submission failed. Try again.','e'); return null }
+}
+
+/* ═══════════════════════════════════════════
+   QR CODE
+═══════════════════════════════════════════ */
+function showQR(username){
+  const url=`${window.location.origin}${window.location.pathname}#/p/${username}`;
+  modal(`
+    <div class="qr-wrap">
+      <button class="mcl" onclick="closeMdl()"><i class="fas fa-times"></i></button>
+      <div class="mttl">📱 Your QR Code</div>
+      <div id="qr-cv"></div>
+      <div class="qr-url">${url}</div>
+      <div class="qr-acts">
+        <button class="btn btn-p flex-1" onclick="dlQR('${username}')"><i class="fas fa-download"></i> Download</button>
+        <button class="btn btn-s" onclick="cpLink('${url}')"><i class="fas fa-copy"></i> Copy</button>
+      </div>
+    </div>
+  `);
+  setTimeout(()=>{
+    const el=document.getElementById('qr-cv');
+    if(el){ el.innerHTML='';
+      new QRCode(el,{text:url,width:190,height:190,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.H});
+    }
+  },120);
+}
+
+function dlQR(username){
+  const cvs=document.querySelector('#qr-cv canvas');
+  if(!cvs){ toast('QR not ready yet.','e'); return }
+  const sz=600;
+  const off=document.createElement('canvas');
+  off.width=sz; off.height=sz;
+  const ctx=off.getContext('2d');
+  ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,sz,sz);
+  ctx.drawImage(cvs,50,50,sz-100,sz-100);
+  // add label
+  ctx.fillStyle='#555'; ctx.font='bold 22px Inter,sans-serif'; ctx.textAlign='center';
+  ctx.fillText('@'+username,sz/2,sz-18);
+  const a=document.createElement('a');
+  a.download=`profilo-${username}-qr.png`;
+  a.href=off.toDataURL('image/png'); a.click();
+  toast('QR downloaded! 📥','s');
+}
+
+function cpLink(url){
+  navigator.clipboard.writeText(url)
+    .then(()=>toast('Link copied! 🔗','s'))
+    .catch(()=>toast('Copy failed – try manually.','e'));
+}
+
+/* ═══════════════════════════════════════════
+   MODAL
+═══════════════════════════════════════════ */
+let _mdl=null;
+function modal(html){
+  closeMdl();
+  _mdl=document.createElement('div');
+  _mdl.className='mbk';
+  _mdl.innerHTML=`<div class="mbox">${html}</div>`;
+  _mdl.addEventListener('click',e=>{if(e.target===_mdl)closeMdl()});
+  document.body.appendChild(_mdl);
+}
+function closeMdl(){ if(_mdl){_mdl.remove();_mdl=null} }
+
+/* ═══════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════ */
+function toast(msg,type='i'){
+  const ic={'s':'fa-circle-check','e':'fa-circle-xmark','i':'fa-circle-info','w':'fa-triangle-exclamation'};
+  const el=document.createElement('div');
+  el.className=`toast toast-${type}`;
+  el.innerHTML=`<i class="fas ${ic[type]} tic"></i><span>${msg}</span>`;
+  document.getElementById('tc').appendChild(el);
+  setTimeout(()=>{el.classList.add('rem');setTimeout(()=>el.remove(),240)},3600);
+}
+
+/* ═══════════════════════════════════════════
+   UTILS
+═══════════════════════════════════════════ */
+const ini=n=>(n||'').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)||'?';
+const getTpl=id=>TPLS.find(t=>t.id===id)||TPLS[0];
+function isUnlocked(id){
+  const t=getTpl(id); if(t.free) return true;
+  return (S.ud?.unlockedTemplates||[]).includes(id);
+}
+const validUN=un=>/^[a-z0-9_.\-]{3,30}$/.test(un);
+
+/* ═══════════════════════════════════════════
+   MAIN RENDER
+═══════════════════════════════════════════ */
+function render(){
+  if(S.loading){
+    document.getElementById('app').innerHTML='<div class="pg-ld"><div class="spin"></div><span>Loading…</span></div>';
+    return;
+  }
+  if(route==='p'){ renderPub(param); return }
+  if(!S.user){ renderLand(); return }
+  switch(route){
+    case 'dashboard': renderDash(); break;
+    case 'create':    renderCreate(); break;
+    case 'edit':      renderEdit(param); break;
+    case 'payment':   renderPay(param, param2); break;
+    case 'admin':     S.ud?.isAdmin ? renderAdmin() : go('dashboard'); break;
+    default:          renderDash();
+  }
+}
+
+/* ═══════════════════════════════════════════
+   NAVBAR
+═══════════════════════════════════════════ */
+function navbar(){
+  const init=ini(S.user?.displayName||S.user?.email);
+  return `<nav class="nav">
+    <span class="nav-logo" onclick="go('dashboard')">Profilo</span>
+    <div class="nav-r">
+      ${S.ud?.isAdmin?`<button class="btn btn-g btn-sm" onclick="go('admin')">⚙️ Admin</button>`:''}
+      <div class="nav-av" onclick="userMenu()">${init}</div>
+    </div>
+  </nav>`;
+}
+function userMenu(){
+  modal(`
+    <button class="mcl" onclick="closeMdl()"><i class="fas fa-times"></i></button>
+    <div class="mttl">My Account</div>
+    <p class="ts tm mb4">${S.user?.email}</p>
+    <div style="display:flex;flex-direction:column;gap:9px">
+      <button class="btn btn-s btn-blk" onclick="closeMdl();go('dashboard')"><i class="fas fa-home"></i> Dashboard</button>
+      <button class="btn btn-d btn-blk" onclick="closeMdl();doLogout()"><i class="fas fa-right-from-bracket"></i> Logout</button>
+    </div>
+  `);
+}
+
+/* ═══════════════════════════════════════════
+   LANDING
+═══════════════════════════════════════════ */
+function renderLand(){
+  document.getElementById('app').innerHTML=`
+  <div class="land">
+    <div class="land-logo-wrap">
+      <span class="land-logo">Profilo</span>
+      <p class="land-tag">Your digital identity in one link ✨</p>
+    </div>
+    <div class="auth-card">
+      <div class="tabs">
+        <button class="tbn on" id="t-li" onclick="swTab('li')">Login</button>
+        <button class="tbn" id="t-re" onclick="swTab('re')">Register</button>
+      </div>
+      <div id="f-li">
+        <div class="fg"><label class="lbl">Email</label>
+          <div class="ig"><i class="fas fa-envelope ic"></i><input class="fi" type="email" id="l-em" placeholder="you@example.com" autocomplete="email"/></div></div>
+        <div class="fg"><label class="lbl">Password</label>
+          <div class="ig"><i class="fas fa-lock ic"></i><input class="fi" type="password" id="l-pw" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')hLogin()"/></div></div>
+        <button class="btn btn-p btn-blk btn-lg mt4" onclick="hLogin()"><i class="fas fa-right-to-bracket"></i> Login</button>
+      </div>
+      <div id="f-re" class="hid">
+        <div class="fg"><label class="lbl">Full Name</label>
+          <div class="ig"><i class="fas fa-user ic"></i><input class="fi" type="text" id="r-nm" placeholder="Your Name" autocomplete="name"/></div></div>
+        <div class="fg"><label class="lbl">Email</label>
+          <div class="ig"><i class="fas fa-envelope ic"></i><input class="fi" type="email" id="r-em" placeholder="you@example.com" autocomplete="email"/></div></div>
+        <div class="fg"><label class="lbl">Password</label>
+          <div class="ig"><i class="fas fa-lock ic"></i><input class="fi" type="password" id="r-pw" placeholder="Min. 6 characters" autocomplete="new-password" onkeydown="if(event.key==='Enter')hReg()"/></div></div>
+        <button class="btn btn-p btn-blk btn-lg mt4" onclick="hReg()"><i class="fas fa-user-plus"></i> Create Account</button>
+      </div>
+    </div>
+    <p class="ts tm tc" style="margin-top:22px">🔒 Secure · Mobile-friendly · Free to start</p>
+  </div>`;
+}
+function swTab(t){
+  ['li','re'].forEach(x=>{
+    document.getElementById('t-'+x).classList.toggle('on',x===t);
+    document.getElementById('f-'+x).classList.toggle('hid',x!==t);
+  });
+}
+function hLogin(){
+  const em=document.getElementById('l-em').value.trim();
+  const pw=document.getElementById('l-pw').value;
+  if(!em||!pw){toast('Fill all fields.','w');return}
+  doLogin(em,pw);
+}
+function hReg(){
+  const nm=document.getElementById('r-nm').value.trim();
+  const em=document.getElementById('r-em').value.trim();
+  const pw=document.getElementById('r-pw').value;
+  if(!nm||!em||!pw){toast('Fill all fields.','w');return}
+  if(pw.length<6){toast('Password: min 6 characters.','w');return}
+  doReg(nm,em,pw);
+}
+
+/* ═══════════════════════════════════════════
+   DASHBOARD
+═══════════════════════════════════════════ */
+async function renderDash(){
+  const app=document.getElementById('app');
+  app.innerHTML=navbar()+`
+  <div class="pg">
+    <div class="wrap">
+      <div class="dash-hd">
+        <div class="dash-hi">Hello, ${S.user?.displayName?.split(' ')[0]||'there'} 👋</div>
+        <div class="dash-sub">Manage your Profilo pages</div>
+      </div>
+      <div id="ps"><div class="pg-ld" style="min-height:180px"><div class="spin"></div></div></div>
+    </div>
+  </div>`;
+  try{
+    const profiles=await getUserProfiles(S.user.uid);
+    const ud=S.ud||{};
+    const max=ud.extraProfilesPaid?FREE_LIMIT+2:FREE_LIMIT;
+    const cnt=profiles.length;
+    const pct=Math.min(100,(cnt/max)*100);
+    const canCr=cnt<max;
+    let pHtml='';
+    if(!cnt){
+      pHtml=`<div class="empty">
+        <div class="empty-e">🔮</div>
+        <div class="empty-t">No profiles yet</div>
+        <div class="empty-s">Create your first digital profile and share all your links in one place.</div>
+        <button class="btn btn-p btn-lg" onclick="go('create')"><i class="fas fa-plus"></i> Create Profile</button>
+      </div>`;
+    } else {
+      pHtml=profiles.map(p=>{
+        const tpl=getTpl(p.template);
+        const pUrl=`${location.origin}${location.pathname}#/p/${p.username}`;
+        return `<div class="pc">
+          <div class="pc-top">
+            <div class="pc-av">${ini(p.displayName||p.username)}</div>
+            <div class="pc-inf">
+              <div class="pc-name">${p.displayName||p.username}</div>
+              <div class="pc-usr">@${p.username}</div>
+            </div>
+            <span class="pc-tpl">${tpl.em} ${tpl.nm}</span>
+          </div>
+          <div class="pc-acts">
+            <button class="btn btn-s btn-sm" onclick="go('edit/${p.id}')"><i class="fas fa-pen"></i> Edit</button>
+            <button class="btn btn-g btn-sm" onclick="showQR('${p.username}')"><i class="fas fa-qrcode"></i> QR</button>
+            <button class="btn btn-g btn-sm" onclick="cpLink('${pUrl}')"><i class="fas fa-link"></i> Link</button>
+            <button class="btn btn-g btn-sm" onclick="window.open('#/p/${p.username}','_blank')"><i class="fas fa-eye"></i></button>
+            <button class="btn btn-d btn-sm" onclick="cfDel('${p.id}','${p.username}')"><i class="fas fa-trash"></i></button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+    document.getElementById('ps').innerHTML=`
+      <div class="lim">
+        <div class="lim-row"><span class="ts"><i class="fas fa-layer-group"></i> Profiles used</span><span class="ts fw">${cnt} / ${max}</span></div>
+        <div class="lim-bar"><div class="lim-fill" style="width:${pct}%"></div></div>
+        ${!ud.extraProfilesPaid&&cnt>=FREE_LIMIT?`<p class="ts tm mt2">Need more? <a href="#" onclick="go('payment/extra-profile');return false" style="color:var(--primary)">Unlock extra slots</a></p>`:''}
+      </div>
+      ${pHtml}
+      ${canCr?`<button class="btn btn-p btn-blk btn-lg" onclick="go('create')" style="margin-top:8px"><i class="fas fa-plus"></i> Create New Profile</button>`
+            :`<button class="btn btn-g btn-blk" onclick="go('payment/extra-profile')" style="margin-top:8px"><i class="fas fa-lock"></i> Unlock More Profile Slots</button>`}
+      <br><br>
+    `;
+  } catch(e){ console.error(e);
+    document.getElementById('ps').innerHTML=`<div class="empty"><div class="empty-e">❌</div><div class="empty-t">Couldn't load profiles</div><button class="btn btn-s" onclick="renderDash()">Retry</button></div>`;
+  }
+}
+function cfDel(pid,un){
+  modal(`<button class="mcl" onclick="closeMdl()"><i class="fas fa-times"></i></button>
+    <div class="mttl">Delete Profile?</div>
+    <p class="ts tm mb4">Delete <strong>@${un}</strong>? This cannot be undone.</p>
+    <div style="display:flex;gap:9px">
+      <button class="btn btn-d flex-1" onclick="closeMdl();xDel('${pid}')"><i class="fas fa-trash"></i> Delete</button>
+      <button class="btn btn-g flex-1" onclick="closeMdl()">Cancel</button>
+    </div>`);
+}
+async function xDel(pid){ await delProfile(pid); renderDash() }
+
+/* ═══════════════════════════════════════════
+   CREATE PROFILE
+═══════════════════════════════════════════ */
+function renderCreate(){
+  selTpl='classic-dark';
+  document.getElementById('app').innerHTML=navbar()+`
+  <div class="cr-pg">
+    <div class="wrap">
+      <div class="pg-hd">
+        <div class="pg-back" onclick="go('dashboard')"><i class="fas fa-arrow-left"></i> Back</div>
+        <div class="pg-h1">Create Profile</div>
+        <div class="pg-hint">Fill in your details and pick a template</div>
+      </div><br>
+      <div class="fg"><label class="lbl">Username *</label>
+        <div class="ig"><i class="fas fa-at ic"></i>
+          <input class="fi" type="text" id="c-un" placeholder="yourname" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9_.\-]/g,'')"/></div>
+        <div class="fhint">3–30 chars · letters, numbers, _ . -</div></div>
+      <div class="fg"><label class="lbl">Display Name *</label>
+        <div class="ig"><i class="fas fa-user ic"></i><input class="fi" type="text" id="c-dn" placeholder="Your Full Name"/></div></div>
+      <div class="fg"><label class="lbl">Bio <span class="tm">(optional)</span></label>
+        <textarea class="fi" id="c-bio" placeholder="Tell the world about yourself…" maxlength="200"></textarea></div>
+      <div class="sep"><span class="sep-lbl">Social Links (all optional)</span></div>
+      ${socialFields('c')}
+      <div class="sep"><span class="sep-lbl">Choose Template</span></div>
+      <div class="tpl-grid" id="tg">${tplGrid()}</div><br>
+      <button class="btn btn-p btn-blk btn-lg" id="cr-btn" onclick="hCreate()"><i class="fas fa-rocket"></i> Create Profile</button>
+      <br><br>
+    </div>
+  </div>`;
+}
+
+function socialFields(pfx){
+  return `
+  <div class="fg"><label class="lbl"><i class="fab fa-snapchat" style="color:#FFFC00"></i> Snapchat</label>
+    <div class="ig"><i class="fas fa-at ic"></i><input class="fi" type="text" id="${pfx}-sc" placeholder="username"/></div></div>
+  <div class="fg"><label class="lbl"><i class="fab fa-tiktok"></i> TikTok</label>
+    <div class="ig"><i class="fas fa-at ic"></i><input class="fi" type="text" id="${pfx}-tk" placeholder="username"/></div></div>
+  <div class="fg"><label class="lbl"><i class="fab fa-facebook" style="color:#1877F2"></i> Facebook</label>
+    <div class="ig"><i class="fas fa-link ic"></i><input class="fi" type="text" id="${pfx}-fb" placeholder="username or page"/></div></div>
+  <div class="fg"><label class="lbl"><i class="fab fa-telegram" style="color:#0088CC"></i> Telegram</label>
+    <div class="ig"><i class="fas fa-at ic"></i><input class="fi" type="text" id="${pfx}-tg" placeholder="username"/></div></div>
+  <div class="fg"><label class="lbl"><i class="fab fa-instagram" style="color:#E4405F"></i> Instagram</label>
+    <div class="ig"><i class="fas fa-at ic"></i><input class="fi" type="text" id="${pfx}-ig" placeholder="username"/></div></div>`;
+}
+
+function tplGrid(){
+  return TPLS.map(t=>{
+    const ul=isUnlocked(t.id), sel=selTpl===t.id;
+    return `<div class="tpl-card${sel?' sel':''}${!ul?' lkd':''}" id="tc-${t.id}"
+      onclick="${ul?`pickTpl('${t.id}')`:`pUnlock('${t.id}')`}">
+      <div class="tpl-prev" style="background:${t.bg}">
+        <span>${t.em}</span>
+        ${!ul?`<div class="lk-ov"><div class="lk-btn" onclick="event.stopPropagation();pUnlock('${t.id}')"><i class="fas fa-lock"></i></div></div>`:''}
+      </div>
+      <div class="tpl-meta">
+        <div class="tpl-nm">${t.nm}</div>
+        <span class="bdg ${t.free?'bdg-f':ul?'bdg-u':'bdg-p'}">${t.free?'✓ Free':ul?'✓ Unlocked':'🔒 '+TPL_PRICE}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+function pickTpl(id){
+  selTpl=id;
+  document.querySelectorAll('.tpl-card').forEach(el=>el.classList.toggle('sel',el.id===`tc-${id}`));
+}
+function pUnlock(id){
+  const t=getTpl(id);
+  modal(`<button class="mcl" onclick="closeMdl()"><i class="fas fa-times"></i></button>
+    <div class="tc mb4"><div style="font-size:3rem;margin-bottom:8px">${t.em}</div>
+      <div class="mttl" style="margin-bottom:4px">Unlock ${t.nm}</div>
+      <p class="ts tm">Premium template</p></div>
+    <div class="pay-box tc mb4"><div class="pay-ttl">Price</div><div class="pay-num">${TPL_PRICE}</div></div>
+    <p class="ts tm mb4">Pay via FastPay or FIB, upload your receipt to unlock.</p>
+    <button class="btn btn-p btn-blk" onclick="closeMdl();go('payment/template/${id}')">
+      <i class="fas fa-unlock"></i> Pay & Unlock</button>`);
+}
+
+async function hCreate(){
+  const un=v('c-un'), dn=v('c-dn'), bio=v('c-bio');
+  if(!un){toast('Username required.','w');return}
+  if(!validUN(un)){toast('Invalid username: 3–30 chars, a-z 0-9 _ . -','w');return}
+  if(!dn){toast('Display name required.','w');return}
+  if(!isUnlocked(selTpl)){toast('That template is locked. Unlock it first.','w');return}
+  const btn=document.getElementById('cr-btn');
+  btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Creating…';
+  const pid=await createProfile({
+    username:un,displayName:dn,bio,template:selTpl,
+    snapchat:v('c-sc'),tiktok:v('c-tk'),facebook:v('c-fb'),telegram:v('c-tg'),instagram:v('c-ig')
+  });
+  if(pid){ showQR(un); setTimeout(()=>go('dashboard'),600) }
+  else{ btn.disabled=false; btn.innerHTML='<i class="fas fa-rocket"></i> Create Profile' }
+}
+
+/* ═══════════════════════════════════════════
+   EDIT PROFILE
+═══════════════════════════════════════════ */
+async function renderEdit(pid){
+  document.getElementById('app').innerHTML=navbar()+`
+  <div class="cr-pg"><div class="wrap">
+    <div class="pg-hd"><div class="pg-back" onclick="go('dashboard')"><i class="fas fa-arrow-left"></i> Back</div>
+      <div class="pg-h1">Edit Profile</div></div><br>
+    <div class="pg-ld" style="min-height:280px"><div class="spin"></div></div>
+  </div></div>`;
+  try{
+    const doc=await db.collection('profiles').doc(pid).get();
+    if(!doc.exists||doc.data().userId!==S.user.uid){ toast('Profile not found.','e'); go('dashboard'); return }
+    const p=doc.data(); selTpl=p.template;
+    document.getElementById('app').innerHTML=navbar()+`
+    <div class="cr-pg"><div class="wrap">
+      <div class="pg-hd">
+        <div class="pg-back" onclick="go('dashboard')"><i class="fas fa-arrow-left"></i> Back</div>
+        <div class="pg-h1">Edit Profile</div>
+        <div class="pg-hint">@${p.username}</div>
+      </div><br>
+      <div class="fg"><label class="lbl">Username *</label>
+        <div class="ig"><i class="fas fa-at ic"></i>
+          <input class="fi" type="text" id="e-un" value="${p.username}" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9_.\-]/g,'')"/></div></div>
+      <div class="fg"><label class="lbl">Display Name *</label>
+        <div class="ig"><i class="fas fa-user ic"></i><input class="fi" type="text" id="e-dn" value="${esc(p.displayName||'')}"/></div></div>
+      <div class="fg"><label class="lbl">Bio</label>
+        <textarea class="fi" id="e-bio" maxlength="200">${esc(p.bio||'')}</textarea></div>
+      <div class="sep"><span class="sep-lbl">Social Links</span></div>
+      <div class="fg"><label class="lbl"><i class="fab fa-snapchat" style="color:#FFFC00"></i> Snapchat</label>
+        <div class="ig"><i class="fas fa-at ic"></i><input class="fi" type="text" id="e-sc" value="${esc(p.snapchat||'')}" placeholder="username"/></div></div>
+      <div class="fg"><label class="lbl"><i class="fab fa-tiktok"></i> TikTok</label>
+        <div class="ig"><i class="fas fa-at ic"></i><input class="fi" type="text" id="e-tk" value="${esc(p.tiktok||'')}" placeholder="username"/></div></div>
+      <div class="fg"><label class="lbl"><i class="fab fa-facebook" style="color:#1877F2"></i> Facebook</label>
+        <div class="ig"><i class="fas fa-link ic"></i><input class="fi" type="text" id="e-fb" value="${esc(p.facebook||'')}" placeholder="username or page"/></div></div>
+      <div class="fg"><label class="lbl"><i class="fab fa-telegram" style="color:#0088CC"></i> Telegram</label>
+        <div class="ig"><i class="fas fa-at ic"></i><input class="fi" type="text" id="e-tg" value="${esc(p.telegram||'')}" placeholder="username"/></div></div>
+      <div class="fg"><label class="lbl"><i class="fab fa-instagram" style="color:#E4405F"></i> Instagram</label>
+        <div class="ig"><i class="fas fa-at ic"></i><input class="fi" type="text" id="e-ig" value="${esc(p.instagram||'')}" placeholder="username"/></div></div>
+      <div class="sep"><span class="sep-lbl">Template</span></div>
+      <div class="tpl-grid" id="tg">${tplGrid()}</div><br>
+      <div style="display:flex;gap:9px">
+        <button class="btn btn-p flex-1 btn-lg" id="e-btn" onclick="hUpdate('${pid}','${p.username}')">
+          <i class="fas fa-save"></i> Save Changes</button>
+        <button class="btn btn-g" onclick="showQR('${p.username}')"><i class="fas fa-qrcode"></i></button>
+      </div><br><br>
+    </div></div>`;
+  } catch(e){ console.error(e); toast('Failed to load.','e'); go('dashboard') }
+}
+
+async function hUpdate(pid,oldUN){
+  const un=v('e-un'), dn=v('e-dn');
+  if(!un){toast('Username required.','w');return}
+  if(!validUN(un)){toast('Invalid username format.','w');return}
+  if(!dn){toast('Display name required.','w');return}
+  if(!isUnlocked(selTpl)){toast('That template is locked.','w');return}
+  const btn=document.getElementById('e-btn');
+  btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Saving…';
+  const ok=await updProfile(pid,{
+    username:un,displayName:dn,bio:v('e-bio'),template:selTpl,
+    snapchat:v('e-sc'),tiktok:v('e-tk'),facebook:v('e-fb'),telegram:v('e-tg'),instagram:v('e-ig')
+  },oldUN);
+  if(ok){ go('dashboard') }
+  else{ btn.disabled=false; btn.innerHTML='<i class="fas fa-save"></i> Save Changes' }
+}
+
+/* ═══════════════════════════════════════════
+   PUBLIC PROFILE
+═══════════════════════════════════════════ */
+async function renderPub(username){
+  document.getElementById('app').innerHTML='<div class="pg-ld"><div class="spin"></div></div>';
+  if(!username){ notFound(username); return }
+  try{
+    const p=await getProfileByUN(username);
+    if(!p){ notFound(username); return }
+    const tpl=getTpl(p.template);
+    const init=ini(p.displayName||p.username);
+    const cssVars=Object.entries(tpl.v).map(([k,vl])=>`${k}:${vl}`).join(';');
+    const socials=[
+      p.snapchat&&{url:`https://snapchat.com/add/${p.snapchat}`,    label:'Snapchat',   sub:p.snapchat,  icon:'fab fa-snapchat',ic:'sn-ic'},
+      p.tiktok&&  {url:`https://tiktok.com/@${p.tiktok}`,          label:'TikTok',     sub:p.tiktok,    icon:'fab fa-tiktok', ic:'tk-ic'},
+      p.facebook&& {url:`https://facebook.com/${p.facebook}`,       label:'Facebook',   sub:p.facebook,  icon:'fab fa-facebook',ic:'fb-ic'},
+      p.telegram&& {url:`https://t.me/${p.telegram}`,               label:'Telegram',   sub:p.telegram,  icon:'fab fa-telegram',ic:'tg-ic'},
+      p.instagram&&{url:`https://instagram.com/${p.instagram}`,     label:'Instagram',  sub:p.instagram, icon:'fab fa-instagram',ic:'ig-ic'},
+    ].filter(Boolean);
+    const links=socials.length
+      ? socials.map(s=>`<a href="${s.url}" target="_blank" rel="noopener" class="pub-lnk">
+          <div class="pub-lic ${s.ic}"><i class="${s.icon}"></i></div>
+          <div><div style="font-size:.88rem;font-weight:800">${s.label}</div>
+               <div style="font-size:.74rem;opacity:.65">@${s.sub}</div></div>
+          <i class="fas fa-arrow-up-right-from-square" style="margin-left:auto;opacity:.45;font-size:.72rem"></i>
+        </a>`).join('')
+      : `<p style="text-align:center;opacity:.45;font-size:.88rem;padding:20px">No links added yet</p>`;
+    document.getElementById('app').innerHTML=`
+      <div class="pub-pg" style="${cssVars};background:${tpl.v['--p-bg']}">
+        <div class="pub-in">
+          <div class="pub-hd">
+            <div class="pub-av">${init}</div>
+            <div class="pub-name">${esc(p.displayName||p.username)}</div>
+            <div class="pub-handle">@${p.username}</div>
+            ${p.bio?`<div class="pub-bio">${esc(p.bio)}</div>`:''}
+          </div>
+          <div class="pub-links">${links}</div>
+          <div class="pub-ft">Made with <a href="${location.origin}${location.pathname}" target="_blank">Profilo ✨</a></div>
+        </div>
+      </div>`;
+  } catch(e){ console.error(e); document.getElementById('app').innerHTML='<div class="pg-ld"><p style="color:var(--err)">Failed to load profile.</p></div>' }
+}
+function notFound(un){
+  document.getElementById('app').innerHTML=`
+    <div class="pg-ld" style="flex-direction:column;gap:14px">
+      <div style="font-size:4rem">😕</div>
+      <h2>Profile not found</h2>
+      <p class="tm">${un?`@${un} doesn't exist`:'No username provided'}</p>
+      <a href="#/" class="btn btn-s">← Go to Profilo</a>
+    </div>`;
+}
+
+/* ═══════════════════════════════════════════
+   PAYMENT PAGE
+═══════════════════════════════════════════ */
+function renderPay(type, tplId){
+  payFile=null; payMethod='fastpay';
+  const isTpl=type==='template';
+  const tpl=isTpl?getTpl(tplId):null;
+  const title=isTpl?`Unlock ${tpl?.em} ${tpl?.nm} Template`:'Get Extra Profile Slots';
+  const price=isTpl?TPL_PRICE:XTRA_PRICE;
+  const desc=isTpl
+    ?`Pay ${price} to unlock the ${tpl?.nm} template permanently.`
+    :`Pay ${price} to unlock 2 extra profile slots (total 4).`;
+  document.getElementById('app').innerHTML=navbar()+`
+  <div class="pay-pg"><div class="wrap">
+    <div class="pg-hd">
+      <div class="pg-back" onclick="history.back()"><i class="fas fa-arrow-left"></i> Back</div>
+      <div class="pg-h1">💳 Payment</div>
+      <div class="pg-hint">${title}</div>
+    </div><br>
+    <div class="pay-box">
+      <div class="pay-ttl">Amount to Pay</div>
+      <div class="pay-num">${price}</div>
+      <div class="ts tm mt2">${desc}</div>
+    </div>
+    <div class="pay-steps">
+      <div class="pay-step"><div class="ps-n">1</div>
+        <div class="ps-t">Send <strong>${price}</strong> to <strong style="color:var(--primary)">${ADMIN_PHONE}</strong> via FastPay or FIB</div></div>
+      <div class="pay-step"><div class="ps-n">2</div>
+        <div class="ps-t">Fill in your details and upload the payment screenshot below</div></div>
+      <div class="pay-step"><div class="ps-n">3</div>
+        <div class="ps-t">Click Submit — WhatsApp will open to confirm your payment to the admin</div></div>
+    </div>
+    <div class="div"></div>
+    <div class="fg"><label class="lbl">Full Name *</label>
+      <input class="fi" type="text" id="py-nm" placeholder="Your full name"/></div>
+    <div class="fg"><label class="lbl">Phone Number *</label>
+      <input class="fi" type="tel" id="py-ph" placeholder="07xx xxx xxxx"/></div>
+    <div class="fg"><label class="lbl">Payment Method *</label>
+      <div class="mth-sel">
+        <button class="mth-btn on" id="mf" onclick="selMth('fastpay')">⚡ FastPay</button>
+        <button class="mth-btn" id="mfib" onclick="selMth('fib')">🏦 FIB</button>
+      </div></div>
+    <div class="fg"><label class="lbl">Payment Screenshot *</label>
+      <div class="upd" id="upd-area">
+        <input type="file" id="py-file" accept="image/*" onchange="onFile(event)"/>
+        <div id="upd-ph">
+          <i class="fas fa-cloud-arrow-up" style="font-size:2rem;color:var(--muted);display:block;margin-bottom:8px"></i>
+          <p class="ts tm">Tap to upload screenshot</p>
+          <p style="font-size:.72rem;color:var(--muted);margin-top:4px">JPG or PNG</p>
+        </div>
+        <img id="upd-prev"/>
+      </div></div>
+    <button class="btn btn-ok btn-blk btn-lg" id="py-btn" onclick="hPaySubmit('${type}','${tplId||''}')">
+      <i class="fab fa-whatsapp"></i> Submit & Open WhatsApp</button>
+    <br><br>
+  </div></div>`;
+}
+function selMth(m){
+  payMethod=m;
+  document.getElementById('mf').classList.toggle('on',m==='fastpay');
+  document.getElementById('mfib').classList.toggle('on',m==='fib');
+}
+function onFile(e){
+  const f=e.target.files[0]; if(!f) return;
+  payFile=f;
+  const pr=document.getElementById('upd-prev');
+  const ph=document.getElementById('upd-ph');
+  pr.src=URL.createObjectURL(f); pr.style.display='block'; ph.style.display='none';
+}
+async function hPaySubmit(type,tplId){
+  const nm=v('py-nm'), ph=v('py-ph');
+  if(!nm){toast('Enter your name.','w');return}
+  if(!ph){toast('Enter your phone number.','w');return}
+  if(!payFile){toast('Upload payment screenshot.','w');return}
+  const btn=document.getElementById('py-btn');
+  btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Processing…';
+  const oid=await submitPayment({nm,ph,method:payMethod,type,tplId:tplId||null,file:payFile});
+  if(oid){ btn.innerHTML='✅ Submitted!'; setTimeout(()=>go('dashboard'),2200) }
+  else{ btn.disabled=false; btn.innerHTML='<i class="fab fa-whatsapp"></i> Submit & Open WhatsApp' }
+}
+
+/* ═══════════════════════════════════════════
+   ADMIN PANEL
+═══════════════════════════════════════════ */
+let aTab='orders';
+async function renderAdmin(){
+  if(!S.ud?.isAdmin){ go('dashboard'); return }
+  document.getElementById('app').innerHTML=navbar()+`
+  <div class="adm-pg"><div class="wrap-lg">
+    <div class="pg-hd"><div class="pg-h1">⚙️ Admin Panel</div><div class="pg-hint">Manage users, orders & profiles</div></div><br>
+    <div id="adm-st"><div class="pg-ld" style="min-height:100px"><div class="spin"></div></div></div>
+    <div class="adm-tabs">
+      <button class="at-btn on" id="atab-orders"   onclick="swAdmTab('orders')">📦 Orders</button>
+      <button class="at-btn"    id="atab-users"    onclick="swAdmTab('users')">👥 Users</button>
+      <button class="at-btn"    id="atab-profiles" onclick="swAdmTab('profiles')">🔮 Profiles</button>
+    </div>
+    <div id="adm-ct"><div class="pg-ld" style="min-height:100px"><div class="spin"></div></div></div>
+  </div></div>`;
+  try{
+    const [us,os,ps]=await Promise.all([
+      db.collection('users').get(),
+      db.collection('orders').get(),
+      db.collection('profiles').get()
+    ]);
+    const pending=os.docs.filter(d=>d.data().status==='pending').length;
+    document.getElementById('adm-st').innerHTML=`
+      <div class="adm-stats">
+        <div class="st-card"><div class="st-n">${us.size}</div><div class="st-l">Users</div></div>
+        <div class="st-card"><div class="st-n">${ps.size}</div><div class="st-l">Profiles</div></div>
+        <div class="st-card"><div class="st-n">${os.size}</div><div class="st-l">Orders</div></div>
+        <div class="st-card"><div class="st-n" style="color:var(--warn)">${pending}</div><div class="st-l">Pending</div></div>
+      </div>`;
+  } catch(e){}
+  loadAdmTab('orders');
+}
+function swAdmTab(t){
+  aTab=t;
+  document.querySelectorAll('.at-btn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('atab-'+t)?.classList.add('on');
+  document.getElementById('adm-ct').innerHTML='<div class="pg-ld" style="min-height:80px"><div class="spin"></div></div>';
+  loadAdmTab(t);
+}
+async function loadAdmTab(t){
+  const el=document.getElementById('adm-ct');
+  try{
+    if(t==='orders'){
+      const s=await db.collection('orders').orderBy('createdAt','desc').limit(80).get();
+      const rows=s.docs.map(d=>d.data());
+      if(!rows.length){ el.innerHTML='<div class="empty"><div class="empty-e">📭</div><div class="empty-t">No orders yet</div></div>'; return }
+      el.innerHTML=`<div class="tbl-wrap"><table class="dt">
+        <thead><tr><th>User</th><th>Type</th><th>Method</th><th>Amount</th><th>Status</th><th>Screenshot</th><th>Actions</th></tr></thead>
+        <tbody>${rows.map(o=>`<tr>
+          <td><div style="font-weight:800;font-size:.85rem">${esc(o.userName||'—')}</div>
+              <div style="font-size:.73rem;color:var(--muted)">${esc(o.userEmail||'—')}</div>
+              <div style="font-size:.7rem;color:var(--muted)">${esc(o.phone||'—')}</div></td>
+          <td style="font-size:.8rem">${o.type==='template'?`🎨 ${o.templateId}`:'➕ Extra Profile'}</td>
+          <td style="font-size:.8rem;font-weight:700">${(o.paymentMethod||'').toUpperCase()}</td>
+          <td style="font-size:.8rem;font-weight:800">${o.amount||'—'}</td>
+          <td><span class="sb sb-${o.status==='approved'?'ok':o.status==='rejected'?'rej':'pend'}">${o.status}</span></td>
+          <td>${o.screenshotUrl?`<a href="${o.screenshotUrl}" target="_blank" class="btn btn-g btn-sm"><i class="fas fa-image"></i> View</a>`:'—'}</td>
+          <td>${o.status==='pending'?`<div style="display:flex;gap:6px">
+            <button class="btn btn-ok btn-sm" onclick="admApprove('${o.id}','${o.userId}','${o.type}','${o.templateId||''}')">✓</button>
+            <button class="btn btn-d btn-sm" onclick="admReject('${o.id}')">✗</button>
+          </div>`:'—'}</td>
+        </tr>`).join('')}
+        </tbody></table></div>`;
+    } else if(t==='users'){
+      const s=await db.collection('users').get();
+      const rows=s.docs.map(d=>({uid:d.id,...d.data()}));
+      el.innerHTML=`<div class="tbl-wrap"><table class="dt">
+        <thead><tr><th>Name</th><th>Email</th><th>Profiles</th><th>Extra</th><th>Unlocked Templates</th></tr></thead>
+        <tbody>${rows.map(u=>`<tr>
+          <td style="font-weight:800">${esc(u.displayName||'—')}</td>
+          <td style="font-size:.8rem">${esc(u.email||'—')}</td>
+          <td style="text-align:center">${u.profileCount||0}</td>
+          <td style="text-align:center">${u.extraProfilesPaid?'<span class="sb sb-ok">Yes</span>':'—'}</td>
+          <td style="font-size:.75rem">${(u.unlockedTemplates||[]).join(', ')||'—'}</td>
+        </tr>`).join('')}
+        </tbody></table></div>`;
+    } else {
+      const s=await db.collection('profiles').get();
+      const rows=s.docs.map(d=>({id:d.id,...d.data()}));
+      el.innerHTML=`<div class="tbl-wrap"><table class="dt">
+        <thead><tr><th>Username</th><th>Display Name</th><th>Template</th><th>User ID</th><th>View</th></tr></thead>
+        <tbody>${rows.map(p=>{const tp=getTpl(p.template);return`<tr>
+          <td><strong>@${p.username}</strong></td>
+          <td>${esc(p.displayName||'—')}</td>
+          <td>${tp.em} ${tp.nm}</td>
+          <td style="font-size:.7rem;color:var(--muted);font-family:monospace">${(p.userId||'').slice(0,12)}…</td>
+          <td><a href="#/p/${p.username}" target="_blank" class="btn btn-g btn-sm"><i class="fas fa-eye"></i></a></td>
+        </tr>`}).join('')}
+        </tbody></table></div>`;
+    }
+  } catch(e){
+    console.error(e);
+    el.innerHTML='<div class="empty"><div class="empty-e">❌</div><div class="empty-t">Failed to load</div></div>';
+  }
+}
+async function admApprove(oid,uid,type,tplId){
+  try{
+    const b=db.batch();
+    b.update(db.collection('orders').doc(oid),{status:'approved'});
+    if(type==='template'&&tplId)
+      b.update(db.collection('users').doc(uid),{unlockedTemplates:firebase.firestore.FieldValue.arrayUnion(tplId)});
+    else if(type==='extra-profile')
+      b.update(db.collection('users').doc(uid),{extraProfilesPaid:true});
+    await b.commit();
+    toast('Order approved! ✅','s'); loadAdmTab('orders');
+  } catch(e){ toast('Failed to approve.','e') }
+}
+async function admReject(oid){
+  try{
+    await db.collection('orders').doc(oid).update({status:'rejected'});
+    toast('Order rejected.','i'); loadAdmTab('orders');
+  } catch(e){ toast('Failed to reject.','e') }
+}
+
+/* ═══════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════ */
+const v=id=>(document.getElementById(id)?.value||'').trim();
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+</script>
+</body>
+</html>
