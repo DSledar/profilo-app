@@ -356,11 +356,10 @@ table.dt{width:100%;border-collapse:collapse;font-size:.83rem}
 /* ═══════════════════════════════════════════
    CONFIGURATION  ←  FILL THESE IN
 ═══════════════════════════════════════════ */
-const firebaseConfig = {
+const FIREBASE_CONFIG = {
   apiKey: "AIzaSyB6rcwRc3MIaRizSqGpfZDEGdGcAwvTgFo",
   authDomain: "profilo-app-92bc4.firebaseapp.com",
   projectId: "profilo-app-92bc4",
-  storageBucket: "profilo-app-92bc4.firebasestorage.app",
   messagingSenderId: "1053297665255",
   appId: "1:1053297665255:web:d0449a7783566e02ac2e42"
 };
@@ -400,7 +399,17 @@ const TPLS = [
 /* ═══════════════════════════════════════════
    FIREBASE
 ═══════════════════════════════════════════ */
-firebase.initializeApp(FIREBASE_CONFIG);
+try {
+  firebase.initializeApp(FIREBASE_CONFIG);
+} catch(e) {
+  document.getElementById('app').innerHTML = `
+    <div class="pg-ld" style="flex-direction:column;gap:16px;padding:32px;text-align:center">
+      <div style="font-size:3rem">⚠️</div>
+      <h2 style="color:var(--err)">Firebase Setup Error</h2>
+      <p style="color:var(--muted);max-width:340px">Check that your Firebase config values are correct in index.html<br><br><code style="font-size:.75rem;color:var(--warn)">${e.message}</code></p>
+    </div>`;
+  throw e;
+}
 const auth = firebase.auth();
 const db   = firebase.firestore();
 
@@ -429,7 +438,13 @@ window.addEventListener('hashchange', handleRoute);
 /* ═══════════════════════════════════════════
    AUTH STATE
 ═══════════════════════════════════════════ */
+// Safety net — if Firebase never responds within 8s, stop loading anyway
+const _authTimeout = setTimeout(() => {
+  if(S.loading){ S.loading=false; handleRoute(); }
+}, 8000);
+
 auth.onAuthStateChanged(async u => {
+  clearTimeout(_authTimeout);
   S.loading = false;
   if(u){ S.user=u; await loadUD(u.uid); }
   else { S.user=null; S.ud=null; }
@@ -452,7 +467,7 @@ async function loadUD(uid){
       await db.collection('users').doc(uid).set(nd);
       S.ud = nd;
     }
-  } catch(e){ console.error(e) }
+  } catch(e){ console.error('loadUD error:',e) }
 }
 
 /* ── AUTH FNS ── */
