@@ -165,6 +165,17 @@ textarea.fi{resize:vertical;min-height:82px}
 
 /* ── TEMPLATES ── */
 .tpl-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.cust-toggle{display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:13px 15px;cursor:pointer;margin-bottom:12px}
+.cust-toggle .lbl{margin:0}
+.sw{position:relative;width:40px;height:22px;background:var(--border2);border-radius:20px;transition:background .15s;flex-shrink:0}
+.sw::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .15s}
+.sw.on{background:var(--primary)}
+.sw.on::after{transform:translateX(18px)}
+[dir="rtl"] .sw.on::after{transform:translateX(-18px)}
+.color-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.color-fld{text-align:center}
+.color-fld input[type=color]{width:100%;height:42px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;padding:3px}
+.color-fld .lbl{margin-bottom:6px;font-size:.68rem}
 .tpl-card{border-radius:var(--radius);border:2px solid var(--border);overflow:hidden;cursor:pointer;transition:border .15s}
 .tpl-card.sel{border-color:var(--primary)}
 .tpl-card:not(.sel):not(.lkd):hover{border-color:var(--border2)}
@@ -321,6 +332,8 @@ en:{
   username:'Username', usernameHint:'3–30 chars · letters, numbers, _ . -',
   displayName:'Display Name', bio:'Bio', bioOpt:'Bio (optional)',
   socialLinks:'Social Links (all optional)', chooseTemplate:'Choose Template',
+  customColors:'Customize Colors', customColorsHint:'Override the template colors with your own (optional).',
+  bgColor:'Background', textColor:'Text', btnColor:'Buttons',
   createBtn:'Create Profile', back:'Back',
   editProfile:'Edit Profile', saveChanges:'Save Changes',
   payment:'Payment', amountToPay:'Amount to Pay',
@@ -377,6 +390,8 @@ ku:{
   username:'ناوی بەکارهێنەر', usernameHint:'٣–٣٠ پیت · پیت، ژمارە، _ . -',
   displayName:'ناوی پیشاندراو', bio:'دەربارە', bioOpt:'دەربارە (ئارەزوومەندانە)',
   socialLinks:'لینکەکانی تۆڕی کۆمەڵایەتی (هەموو ئارەزوومەندانە)', chooseTemplate:'دیاریکردنی قاڵب',
+  customColors:'گۆڕینی ڕەنگەکان', customColorsHint:'ڕەنگەکانی قاڵبەکە بگۆڕە بۆ ڕەنگی دڵخوازی خۆت (ئارەزوومەندانە).',
+  bgColor:'پاشبنەما', textColor:'دەق', btnColor:'دوگمەکان',
   createBtn:'دروستکردنی بڕوانامە', back:'گەڕانەوە',
   editProfile:'دەستکاریکردنی بڕوانامە', saveChanges:'پاشەکەوتکردنی گۆڕانکارییەکان',
   payment:'پارەدان', amountToPay:'بڕی پارەی پێدەدرێت',
@@ -593,6 +608,7 @@ async function createProfile(data){
     const pd={id:ref.id,userId:uid,username:un,displayName:data.displayName||'',bio:data.bio||'',
       template:data.template,snapchat:data.snapchat||'',tiktok:data.tiktok||'',
       facebook:data.facebook||'',telegram:data.telegram||'',instagram:data.instagram||'',
+      customBg:data.customBg||'',customText:data.customText||'',customBtn:data.customBtn||'',
       createdAt:firebase.firestore.FieldValue.serverTimestamp(),
       updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
     const b=db.batch();
@@ -928,6 +944,46 @@ function socialFieldsHTML(pfx,vals={}){
     </div></div>`).join('');
 }
 
+/* ── Custom colors (override template colors per-profile) ── */
+function customizeFieldsHTML(pfx,vals={}){
+  const has=!!(vals.customBg||vals.customText||vals.customBtn);
+  const bg =vals.customBg  || '#0d1117';
+  const tx =vals.customText|| '#f0f6fc';
+  const bt =vals.customBtn || '#6c5ce7';
+  return `
+  <div class="cust-toggle" onclick="toggleCustom('${pfx}')">
+    <label class="lbl" style="cursor:pointer">${t('customColors')}</label>
+    <div class="sw${has?' on':''}" id="${pfx}-cust-sw"></div>
+  </div>
+  <div id="${pfx}-cust-box" class="${has?'':'hid'}">
+    <p class="ts tm" style="margin-bottom:10px">${t('customColorsHint')}</p>
+    <div class="color-row">
+      <div class="color-fld"><label class="lbl">${t('bgColor')}</label>
+        <input type="color" id="${pfx}-cbg" value="${bg}"/></div>
+      <div class="color-fld"><label class="lbl">${t('textColor')}</label>
+        <input type="color" id="${pfx}-ctx" value="${tx}"/></div>
+      <div class="color-fld"><label class="lbl">${t('btnColor')}</label>
+        <input type="color" id="${pfx}-cbt" value="${bt}"/></div>
+    </div>
+  </div>`;
+}
+function toggleCustom(pfx){
+  const sw=document.getElementById(`${pfx}-cust-sw`);
+  const box=document.getElementById(`${pfx}-cust-box`);
+  const on=!sw.classList.contains('on');
+  sw.classList.toggle('on',on);
+  box.classList.toggle('hid',!on);
+}
+function readCustomColors(pfx){
+  const sw=document.getElementById(`${pfx}-cust-sw`);
+  if(!sw||!sw.classList.contains('on')) return {customBg:'',customText:'',customBtn:''};
+  return {
+    customBg:   v(`${pfx}-cbg`)||document.getElementById(`${pfx}-cbg`).value,
+    customText: v(`${pfx}-ctx`)||document.getElementById(`${pfx}-ctx`).value,
+    customBtn:  v(`${pfx}-cbt`)||document.getElementById(`${pfx}-cbt`).value,
+  };
+}
+
 function tplGrid(){
   return TPLS.map(tp=>{
     const ul=isUnlocked(tp.id),sel=selTpl===tp.id;
@@ -978,6 +1034,7 @@ function renderCreate(){
     ${socialFieldsHTML('c')}
     <div class="sep"><span class="sep-lbl">${t('chooseTemplate')}</span></div>
     <div class="tpl-grid" id="tg">${tplGrid()}</div><br>
+    ${customizeFieldsHTML('c')}
     <button class="btn btn-p btn-blk btn-lg" id="cr-btn" onclick="hCreate()">
       <i class="fas fa-rocket"></i> ${t('createBtn')}</button>
     <br><br>
@@ -993,7 +1050,8 @@ async function hCreate(){
   const btn=document.getElementById('cr-btn');
   btn.disabled=true;btn.innerHTML=`<i class="fas fa-spinner fa-spin"></i> ${lang==='ku'?'دروستدەکرێت…':'Creating…'}`;
   const pid=await createProfile({username:un,displayName:dn,bio,template:selTpl,
-    snapchat:v('c-sc'),tiktok:v('c-tk'),facebook:v('c-fb'),telegram:v('c-tg'),instagram:v('c-ig')});
+    snapchat:v('c-sc'),tiktok:v('c-tk'),facebook:v('c-fb'),telegram:v('c-tg'),instagram:v('c-ig'),
+    ...readCustomColors('c')});
   if(pid){showQR(un);setTimeout(()=>go('dashboard'),600)}
   else{btn.disabled=false;btn.innerHTML=`<i class="fas fa-rocket"></i> ${t('createBtn')}`}
 }
@@ -1027,6 +1085,7 @@ async function renderEdit(pid){
       ${socialFieldsHTML('e',p)}
       <div class="sep"><span class="sep-lbl">${t('chooseTemplate')}</span></div>
       <div class="tpl-grid" id="tg">${tplGrid()}</div><br>
+      ${customizeFieldsHTML('e',p)}
       <div style="display:flex;gap:8px">
         <button class="btn btn-p flex-1 btn-lg" id="e-btn" onclick="hUpdate('${pid}','${p.username}')">
           <i class="fas fa-save"></i> ${t('saveChanges')}</button>
@@ -1045,7 +1104,8 @@ async function hUpdate(pid,oldUN){
   const btn=document.getElementById('e-btn');
   btn.disabled=true;btn.innerHTML=`<i class="fas fa-spinner fa-spin"></i> ${lang==='ku'?'پاشەکەوت دەکرێت…':'Saving…'}`;
   const ok=await updProfile(pid,{username:un,displayName:dn,bio:v('e-bio'),template:selTpl,
-    snapchat:v('e-sc'),tiktok:v('e-tk'),facebook:v('e-fb'),telegram:v('e-tg'),instagram:v('e-ig')},oldUN);
+    snapchat:v('e-sc'),tiktok:v('e-tk'),facebook:v('e-fb'),telegram:v('e-tg'),instagram:v('e-ig'),
+    ...readCustomColors('e')},oldUN);
   if(ok){go('dashboard')}
   else{btn.disabled=false;btn.innerHTML=`<i class="fas fa-save"></i> ${t('saveChanges')}`}
 }
@@ -1061,7 +1121,15 @@ async function renderPub(username){
     if(!p){notFound(username);return}
     const tpl=getTpl(p.template);
     const init=ini(p.displayName||p.username);
-    const css=Object.entries(tpl.v).map(([k,val])=>`${k}:${val}`).join(';');
+    const vars={...tpl.v};
+    if(p.customBg)  { vars['--p-bg']=p.customBg; vars['--p-av-bg']=p.customBg; }
+    if(p.customText){ vars['--p-tx']=p.customText; vars['--p-sub']=p.customText+'b3'; }
+    if(p.customBtn) {
+      vars['--p-btn-br']=p.customBtn; vars['--p-acc']=p.customBtn; vars['--p-av-tx']=p.customBtn;
+      vars['--p-btn-bg']=p.customBtn+'1f'; vars['--p-btn-hv']=p.customBtn+'33'; vars['--p-btn-tx']=p.customText||tpl.v['--p-tx'];
+    }
+    const css=Object.entries(vars).map(([k,val])=>`${k}:${val}`).join(';');
+    const overlayBg=p.customBg||tpl.v['--p-bg'];
     const socs=[
       p.snapchat&&{url:`https://snapchat.com/add/${p.snapchat}`,lbl:t('snapchat'),sub:p.snapchat,icon:'fab fa-snapchat',ic:'sn-ic'},
       p.tiktok&&  {url:`https://tiktok.com/@${p.tiktok}`,     lbl:t('tiktok'),  sub:p.tiktok,  icon:'fab fa-tiktok', ic:'tk-ic'},
@@ -1079,7 +1147,7 @@ async function renderPub(username){
     document.getElementById('app').innerHTML=`
       <div class="pub-pg" style="${css}">
         <div class="pub-bgimg" style="background-image:url('${tpl.img}')"></div>
-        <div class="pub-bgoverlay" style="background:${tpl.v['--p-bg']}"></div>
+        <div class="pub-bgoverlay" style="background:${overlayBg}"></div>
         <div class="pub-in">
           <div class="pub-hd">
             <div class="pub-av">${init}</div>
