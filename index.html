@@ -1,562 +1,621 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-  <meta name="description" content="Profilo – Share all your social links in one beautiful page"/>
-  <title>Profilo – Your Digital Identity</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>Profilo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Arabic:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#07070f;--surface:#0f0f1e;--card:#161626;--card2:#1c1c30;
-  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
-  --text:#eeeeff;--muted:#7878a8;
-  --primary:#7c6eff;--primary-d:#6052e0;--primary-glow:rgba(124,110,255,0.28);
-  --accent:#ff6b9d;--success:#00d48e;--warn:#ffa836;--err:#ff4560;
-  --r-xs:6px;--r-sm:10px;--r-md:14px;--r-lg:20px;--r-xl:26px;
-  --sh:0 4px 28px rgba(0,0,0,0.55);
-  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-  --ease:cubic-bezier(.4,0,.2,1);
+  --bg:#0c0c18;
+  --surface:#12121e;
+  --card:#18182a;
+  --border:rgba(255,255,255,0.09);
+  --border2:rgba(255,255,255,0.18);
+  --text:#e4e4f4;
+  --muted:#6a6a8a;
+  --primary:#6c5ce7;
+  --primary-h:#5a4bd1;
+  --success:#00b894;
+  --warn:#f39c12;
+  --err:#e74c3c;
+  --radius:10px;
+  --radius-lg:14px;
+  --font:'Inter',sans-serif;
+  --font-ku:'Noto Sans Arabic',sans-serif;
 }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100dvh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
-button{cursor:pointer;font-family:var(--font)}
-input,textarea,select{font-family:var(--font)}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100dvh;overflow-x:hidden;-webkit-font-smoothing:antialiased;line-height:1.6}
+[dir="rtl"]{font-family:var(--font-ku)}
+[dir="rtl"] .fa-arrow-left::before{content:"\f061"}
+[dir="rtl"] .fa-right-to-bracket::before{content:"\f2f5"}
+[dir="rtl"] .fa-right-from-bracket::before{content:"\f2f6"}
 a{color:inherit;text-decoration:none}
+button{cursor:pointer;font-family:inherit}
+input,textarea{font-family:inherit}
 img{max-width:100%}
 
 /* ── LAYOUT ── */
 #app{min-height:100dvh}
-.pg{min-height:100dvh}
 .wrap{max-width:460px;margin:0 auto;padding:0 16px}
-.wrap-lg{max-width:980px;margin:0 auto;padding:0 16px}
+.wrap-lg{max-width:960px;margin:0 auto;padding:0 16px}
 
 /* ── NAVBAR ── */
 .nav{
   position:sticky;top:0;z-index:90;
-  background:rgba(7,7,15,0.88);
-  backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+  background:var(--surface);
   border-bottom:1px solid var(--border);
-  height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;
+  height:54px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 16px;
 }
-.nav-logo{
-  font-size:1.35rem;font-weight:900;letter-spacing:-.03em;cursor:pointer;
-  background:linear-gradient(130deg,var(--primary),var(--accent));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-}
-.nav-r{display:flex;align-items:center;gap:10px}
-.nav-av{
-  width:34px;height:34px;border-radius:50%;cursor:pointer;
-  background:linear-gradient(135deg,var(--primary),var(--accent));
-  display:flex;align-items:center;justify-content:center;
-  font-size:.78rem;font-weight:800;color:#fff;flex-shrink:0;
-  transition:transform .18s var(--ease);
-}
-.nav-av:hover{transform:scale(1.08)}
+.nav-logo{font-size:1.25rem;font-weight:800;color:var(--primary);cursor:pointer;letter-spacing:-.02em}
+.nav-r{display:flex;align-items:center;gap:8px}
+.nav-av{width:32px;height:32px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#fff;cursor:pointer}
+.lang-btn{padding:4px 10px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-size:.75rem;font-weight:700;cursor:pointer;transition:all .15s}
+.lang-btn:hover{color:var(--text);border-color:var(--primary)}
 
 /* ── BUTTONS ── */
-.btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:8px;
-  padding:11px 20px;border-radius:var(--r-sm);
-  font-size:.88rem;font-weight:700;border:none;
-  transition:all .18s var(--ease);white-space:nowrap;cursor:pointer;
-}
-.btn-p{background:linear-gradient(135deg,var(--primary),var(--primary-d));color:#fff;box-shadow:0 0 22px var(--primary-glow)}
-.btn-p:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 24px var(--primary-glow)}
-.btn-s{background:var(--card2);color:var(--text);border:1px solid var(--border)}
-.btn-s:hover:not(:disabled){background:rgba(255,255,255,0.07);border-color:var(--border2)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 18px;border-radius:var(--radius);font-size:.86rem;font-weight:600;border:none;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-p{background:var(--primary);color:#fff}
+.btn-p:hover:not(:disabled){background:var(--primary-h)}
+.btn-s{background:var(--card);color:var(--text);border:1px solid var(--border)}
+.btn-s:hover:not(:disabled){border-color:var(--border2)}
 .btn-g{background:transparent;color:var(--muted);border:1px solid var(--border)}
-.btn-g:hover:not(:disabled){color:var(--text);border-color:var(--border2)}
-.btn-d{background:rgba(255,69,96,.1);color:var(--err);border:1px solid rgba(255,69,96,.25)}
-.btn-d:hover:not(:disabled){background:rgba(255,69,96,.18)}
-.btn-ok{background:linear-gradient(135deg,#00d48e,#00b87a);color:#fff}
-.btn-ok:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,212,142,.3)}
-.btn-google{
-  background:#fff;color:#3c4043;border:1.5px solid #dadce0;
-  font-weight:700;font-size:.88rem;
-  transition:all .18s var(--ease);
-}
-.btn-google:hover{background:#f8f9fa;box-shadow:0 2px 8px rgba(0,0,0,.15)}
-.btn-google img{width:18px;height:18px;flex-shrink:0}
-.btn-lg{padding:14px 26px;font-size:.95rem}
+.btn-g:hover:not(:disabled){color:var(--text)}
+.btn-d{background:rgba(231,76,60,.1);color:var(--err);border:1px solid rgba(231,76,60,.25)}
+.btn-d:hover:not(:disabled){background:rgba(231,76,60,.18)}
+.btn-ok{background:var(--success);color:#fff}
+.btn-ok:hover:not(:disabled){background:#009d7a}
+.btn-google{background:#fff;color:#3c4043;border:1.5px solid #dadce0;font-weight:600;font-size:.86rem}
+.btn-google:hover{background:#f8f9fa}
+.btn-google img{width:17px;height:17px}
+.btn-sm{padding:6px 12px;font-size:.78rem;border-radius:7px}
+.btn-lg{padding:13px 24px;font-size:.92rem}
 .btn-blk{width:100%}
-.btn:disabled{opacity:.45;cursor:not-allowed;transform:none!important}
+.btn:disabled{opacity:.45;cursor:not-allowed}
 
 /* ── FORMS ── */
-.fg{margin-bottom:17px}
-.lbl{display:block;font-size:.73rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}
-.fi{
-  width:100%;background:rgba(255,255,255,0.04);
-  border:1.5px solid var(--border);border-radius:var(--r-sm);
-  padding:12px 15px;color:var(--text);font-size:.92rem;
-  transition:all .18s var(--ease);outline:none;-webkit-appearance:none;
-}
-.fi:focus{border-color:var(--primary);background:rgba(124,110,255,.05);box-shadow:0 0 0 3px rgba(124,110,255,.13)}
-.fi::placeholder{color:rgba(255,255,255,.22)}
-textarea.fi{resize:vertical;min-height:88px;line-height:1.6}
+.fg{margin-bottom:15px}
+.lbl{display:block;font-size:.73rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+[dir="rtl"] .lbl{letter-spacing:0}
+.fi{width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:11px 14px;color:var(--text);font-size:.9rem;outline:none;transition:border .15s}
+.fi:focus{border-color:var(--primary)}
+.fi::placeholder{color:var(--muted)}
+textarea.fi{resize:vertical;min-height:82px}
 .ig{position:relative}
-.ig .ic{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.85rem;width:15px;text-align:center;pointer-events:none}
-.ig input{padding-left:40px}
-.fhint{font-size:.73rem;color:var(--muted);margin-top:5px}
+.ig .ic{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.8rem;pointer-events:none}
+.ig input{padding-left:38px}
+[dir="rtl"] .ig .ic{left:auto;right:13px}
+[dir="rtl"] .ig input{padding-left:14px;padding-right:38px}
+.fhint{font-size:.72rem;color:var(--muted);margin-top:4px}
+.or-div{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.76rem;margin:14px 0}
+.or-div::before,.or-div::after{content:'';flex:1;height:1px;background:var(--border)}
 
-/* ── CARD ── */
-.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:22px}
+/* ── CARDS ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px}
 
-/* ── TABS ── */
-.tabs{display:flex;background:var(--surface);border-radius:var(--r-sm);padding:4px;margin-bottom:20px}
-.tbn{flex:1;padding:9px;text-align:center;border-radius:calc(var(--r-sm) - 2px);font-size:.83rem;font-weight:700;color:var(--muted);background:transparent;border:none;cursor:pointer;transition:all .18s var(--ease)}
-.tbn.on{background:var(--card);color:var(--text);box-shadow:var(--sh)}
+/* ── DIVIDER ── */
+.sep{display:flex;align-items:center;gap:10px;margin:16px 0 13px}
+.sep::before,.sep::after{content:'';flex:1;height:1px;background:var(--border)}
+.sep-lbl{font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.09em;white-space:nowrap}
+[dir="rtl"] .sep-lbl{letter-spacing:0}
+.divl{height:1px;background:var(--border);margin:16px 0}
 
 /* ── TOAST ── */
-#tc{
-  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
-  z-index:9999;display:flex;flex-direction:column-reverse;gap:8px;
-  width:calc(100% - 32px);max-width:350px;pointer-events:none;
-}
-.toast{
-  background:var(--card);border:1px solid var(--border);border-radius:var(--r-md);
-  padding:13px 16px;display:flex;align-items:flex-start;gap:11px;
-  font-size:.86rem;line-height:1.45;box-shadow:var(--sh);
-  animation:tIn .32s cubic-bezier(.34,1.56,.64,1);pointer-events:all;
-}
-.toast.rem{animation:tOut .22s ease forwards}
-.tic{font-size:.95rem;flex-shrink:0;margin-top:1px}
+#tc{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column-reverse;gap:7px;width:calc(100% - 28px);max-width:340px;pointer-events:none}
+.toast{background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);padding:12px 15px;display:flex;align-items:flex-start;gap:10px;font-size:.84rem;box-shadow:0 4px 20px rgba(0,0,0,.5);animation:tIn .28s ease;pointer-events:all}
+.toast.rem{animation:tOut .2s ease forwards}
+.tic{flex-shrink:0;margin-top:1px}
 .toast-s .tic{color:var(--success)}.toast-e .tic{color:var(--err)}
 .toast-i .tic{color:var(--primary)}.toast-w .tic{color:var(--warn)}
-@keyframes tIn{from{opacity:0;transform:translateY(12px) scale(.95)}to{opacity:1;transform:none}}
-@keyframes tOut{to{opacity:0;transform:translateY(8px) scale(.95)}}
+@keyframes tIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes tOut{to{opacity:0;transform:translateY(8px)}}
 
 /* ── MODAL ── */
-.mbk{
-  position:fixed;inset:0;background:rgba(0,0,0,.78);
-  backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
-  z-index:300;display:flex;align-items:center;justify-content:center;
-  padding:16px;animation:bkIn .2s ease;
-}
+.mbk{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;display:flex;align-items:center;justify-content:center;padding:16px;animation:bkIn .18s ease}
 @keyframes bkIn{from{opacity:0}to{opacity:1}}
-.mbox{
-  background:var(--card);border:1px solid var(--border2);border-radius:var(--r-xl);
-  padding:26px;width:100%;max-width:370px;position:relative;
-  animation:mIn .3s cubic-bezier(.34,1.56,.64,1);
-}
-@keyframes mIn{from{transform:scale(.88);opacity:0}to{transform:scale(1);opacity:1}}
-.mcl{
-  position:absolute;top:13px;right:13px;width:28px;height:28px;
-  border-radius:50%;background:rgba(255,255,255,.07);border:none;
-  color:var(--muted);display:flex;align-items:center;justify-content:center;
-  font-size:.8rem;cursor:pointer;transition:all .18s var(--ease);
-}
-.mcl:hover{background:rgba(255,255,255,.13);color:var(--text)}
-.mttl{font-size:1.05rem;font-weight:800;margin-bottom:16px}
+.mbox{background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:24px;width:100%;max-width:360px;position:relative;animation:mIn .25s ease}
+@keyframes mIn{from{transform:scale(.93);opacity:0}to{transform:none;opacity:1}}
+.mcl{position:absolute;top:12px;right:12px;width:27px;height:27px;border-radius:50%;background:rgba(255,255,255,.07);border:none;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.78rem}
+[dir="rtl"] .mcl{right:auto;left:12px}
+.mcl:hover{color:var(--text)}
+.mttl{font-size:1rem;font-weight:800;margin-bottom:14px}
+.tabs{display:flex;background:var(--surface);border-radius:var(--radius);padding:3px;margin-bottom:18px}
+.tbn{flex:1;padding:8px;text-align:center;border-radius:8px;font-size:.82rem;font-weight:700;color:var(--muted);background:transparent;border:none;cursor:pointer;transition:all .15s}
+.tbn.on{background:var(--card);color:var(--text)}
 
 /* ── LANDING ── */
-.land{
-  min-height:100dvh;
-  background:radial-gradient(ellipse 70% 55% at 50% -5%,rgba(124,110,255,.2) 0%,transparent 65%),
-             radial-gradient(ellipse 45% 45% at 85% 90%,rgba(255,107,157,.12) 0%,transparent 55%),
-             var(--bg);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 16px;
-}
-.land-logo-wrap{margin-bottom:32px;text-align:center}
-.land-logo{
-  font-size:2.9rem;font-weight:900;letter-spacing:-.04em;display:block;
-  background:linear-gradient(130deg,var(--primary),var(--accent));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-}
-.land-tag{color:var(--muted);font-size:.92rem;margin-top:7px}
-.auth-card{width:100%;max-width:395px;background:var(--card);border:1px solid var(--border);border-radius:var(--r-xl);padding:28px 24px}
+.land{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 16px;background:var(--bg)}
+.land-logo{font-size:2.4rem;font-weight:900;color:var(--primary);display:block;letter-spacing:-.03em;margin-bottom:6px}
+.land-tag{color:var(--muted);font-size:.9rem;margin-bottom:28px;text-align:center}
+.auth-card{width:100%;max-width:390px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:26px 22px}
 
 /* ── DASHBOARD ── */
-.dash-hd{padding:26px 16px 16px}
-.dash-hi{font-size:1.5rem;font-weight:900;letter-spacing:-.02em;margin-bottom:3px}
-.dash-sub{color:var(--muted);font-size:.86rem}
-
-.pc{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;margin-bottom:11px;transition:all .2s var(--ease)}
-.pc:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:var(--sh)}
-.pc-top{display:flex;align-items:center;gap:13px;margin-bottom:13px}
-.pc-av{
-  width:48px;height:48px;border-radius:50%;flex-shrink:0;
-  background:linear-gradient(135deg,var(--primary),var(--accent));
-  display:flex;align-items:center;justify-content:center;
-  font-size:1.05rem;font-weight:800;color:#fff;
-}
+.dash-hd{padding:22px 0 14px}
+.dash-hi{font-size:1.35rem;font-weight:800;margin-bottom:2px}
+.dash-sub{color:var(--muted);font-size:.84rem}
+.pc{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:15px;margin-bottom:10px;transition:border .15s}
+.pc:hover{border-color:var(--border2)}
+.pc-top{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.pc-av{width:44px;height:44px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:800;color:#fff;flex-shrink:0}
 .pc-inf{flex:1;min-width:0}
-.pc-name{font-size:.95rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
-.pc-usr{font-size:.76rem;color:var(--muted)}
-.pc-tpl{font-size:.68rem;padding:3px 9px;border-radius:20px;font-weight:700;background:rgba(124,110,255,.12);color:var(--primary);border:1px solid rgba(124,110,255,.2);white-space:nowrap}
-.pc-acts{display:flex;gap:7px;flex-wrap:wrap}
+.pc-name{font-size:.92rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:1px}
+.pc-usr{font-size:.75rem;color:var(--muted)}
+.pc-tpl{font-size:.66rem;padding:2px 8px;border-radius:20px;font-weight:700;background:rgba(108,92,231,.12);color:var(--primary);white-space:nowrap;border:1px solid rgba(108,92,231,.2)}
+.pc-acts{display:flex;gap:6px;flex-wrap:wrap}
+.lim{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:14px}
+.lim-row{display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:7px}
+.lim-bar{height:4px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden}
+.lim-fill{height:100%;background:var(--primary);border-radius:4px;transition:width .4s}
 
-/* ── LIMIT BAR ── */
-.lim{background:var(--card);border:1px solid var(--border);border-radius:var(--r-md);padding:15px;margin-bottom:16px}
-.lim-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:.82rem}
-.lim-bar{height:5px;background:rgba(255,255,255,.06);border-radius:10px;overflow:hidden}
-.lim-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:10px;transition:width .5s ease}
-
-/* ── CREATE / EDIT ── */
+/* ── CREATE/EDIT ── */
 .cr-pg{padding-bottom:60px}
-.pg-hd{padding:26px 16px 0}
-.pg-back{display:inline-flex;align-items:center;gap:7px;color:var(--muted);font-size:.83rem;margin-bottom:11px;cursor:pointer;transition:color .18s var(--ease)}
+.pg-hd{padding:20px 0 0}
+.pg-back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:.82rem;margin-bottom:10px;cursor:pointer;background:none;border:none;transition:color .15s}
 .pg-back:hover{color:var(--text)}
-.pg-h1{font-size:1.5rem;font-weight:900;letter-spacing:-.02em;margin-bottom:3px}
-.pg-hint{color:var(--muted);font-size:.84rem}
-
-.sep{display:flex;align-items:center;gap:10px;margin:18px 0 14px}
-.sep::before,.sep::after{content:'';flex:1;height:1px;background:var(--border)}
-.sep-lbl{font-size:.7rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;white-space:nowrap}
+.pg-h1{font-size:1.35rem;font-weight:800;margin-bottom:2px}
+.pg-hint{color:var(--muted);font-size:.82rem}
 
 /* ── TEMPLATES ── */
-.tpl-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
-.tpl-card{border-radius:var(--r-md);border:2px solid var(--border);overflow:hidden;cursor:pointer;transition:all .18s var(--ease);position:relative}
-.tpl-card.sel{border-color:var(--primary);box-shadow:0 0 0 3px rgba(124,110,255,.22)}
+.tpl-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.tpl-card{border-radius:var(--radius);border:2px solid var(--border);overflow:hidden;cursor:pointer;transition:border .15s}
+.tpl-card.sel{border-color:var(--primary)}
+.tpl-card:not(.sel):not(.lkd):hover{border-color:var(--border2)}
 .tpl-card.lkd{cursor:default}
-.tpl-card:not(.lkd):not(.sel):hover{border-color:var(--border2);transform:translateY(-2px)}
-.tpl-prev{height:70px;display:flex;align-items:center;justify-content:center;font-size:1.7rem;position:relative}
-.tpl-meta{padding:8px 10px;background:rgba(0,0,0,.32)}
-.tpl-nm{font-size:.76rem;font-weight:800;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bdg{display:inline-flex;align-items:center;gap:3px;font-size:.64rem;font-weight:800;padding:2px 7px;border-radius:20px}
-.bdg-f{background:rgba(0,212,142,.14);color:var(--success)}
-.bdg-p{background:rgba(255,168,54,.14);color:var(--warn)}
-.bdg-u{background:rgba(124,110,255,.14);color:var(--primary)}
-.lk-ov{position:absolute;inset:0;background:rgba(0,0,0,.52);display:flex;align-items:center;justify-content:center}
-.lk-btn{width:34px;height:34px;border-radius:50%;background:rgba(255,168,54,.15);border:1px solid rgba(255,168,54,.35);display:flex;align-items:center;justify-content:center;color:var(--warn);font-size:.85rem;cursor:pointer;transition:all .18s var(--ease)}
-.lk-btn:hover{background:rgba(255,168,54,.28)}
+.tpl-prev{height:66px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;position:relative;background-size:cover;background-position:center}
+.tpl-prev::before{content:'';position:absolute;inset:0;background:rgba(0,0,0,.38)}
+.tpl-prev span{position:relative;z-index:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.6))}
+.tpl-meta{padding:7px 9px;background:rgba(0,0,0,.28)}
+.tpl-nm{font-size:.74rem;font-weight:700;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bdg{display:inline-flex;align-items:center;gap:3px;font-size:.62rem;font-weight:700;padding:2px 7px;border-radius:20px}
+.bdg-f{background:rgba(0,184,148,.13);color:var(--success)}
+.bdg-p{background:rgba(243,156,18,.13);color:var(--warn)}
+.bdg-u{background:rgba(108,92,231,.13);color:var(--primary)}
+.lk-ov{position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center}
+.lk-ic{width:30px;height:30px;border-radius:50%;background:rgba(243,156,18,.15);border:1px solid rgba(243,156,18,.35);display:flex;align-items:center;justify-content:center;color:var(--warn);font-size:.78rem;cursor:pointer}
 
 /* ── PUBLIC PROFILE ── */
-.pub-pg{min-height:100dvh;background:var(--p-bg,#0d1117);display:flex;flex-direction:column;align-items:center;padding:44px 16px 64px}
-.pub-in{width:100%;max-width:420px}
-.pub-hd{text-align:center;margin-bottom:30px}
-.pub-av{
-  width:88px;height:88px;border-radius:50%;
-  background:var(--p-av-bg,#21262d);color:var(--p-av-tx,#58a6ff);
-  display:flex;align-items:center;justify-content:center;
-  font-size:1.9rem;font-weight:900;margin:0 auto 15px;
-  border:3px solid var(--p-btn-br,#30363d);
-}
-.pub-name{font-family:var(--font);color:var(--p-tx,#f0f6fc);font-size:1.45rem;font-weight:900;letter-spacing:-.02em;margin-bottom:3px}
-.pub-handle{color:var(--p-sub,#8b949e);font-size:.84rem}
-.pub-bio{color:var(--p-sub,#8b949e);font-size:.9rem;margin-top:12px;line-height:1.65}
-.pub-links{display:flex;flex-direction:column;gap:11px}
-.pub-lnk{
-  display:flex;align-items:center;gap:13px;
-  padding:14px 18px;
-  background:var(--p-btn-bg,#21262d);
-  border:1.5px solid var(--p-btn-br,#30363d);
-  border-radius:14px;
-  color:var(--p-btn-tx,#f0f6fc);
-  font-family:var(--font);font-size:.9rem;font-weight:700;
-  cursor:pointer;transition:all .18s ease;text-decoration:none;
-}
+.pub-pg{min-height:100dvh;position:relative;display:flex;flex-direction:column;align-items:center;padding:40px 16px 60px;overflow:hidden}
+.pub-bgimg{position:absolute;inset:0;background-size:cover;background-position:center;z-index:0}
+.pub-bgoverlay{position:absolute;inset:0;opacity:.82;z-index:0}
+.pub-in{position:relative;z-index:1}
+.pub-in{width:100%;max-width:400px}
+.pub-hd{text-align:center;margin-bottom:28px}
+.pub-av{width:82px;height:82px;border-radius:50%;background:var(--p-av-bg,#21262d);color:var(--p-av-tx,#58a6ff);display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:900;margin:0 auto 13px;border:3px solid var(--p-btn-br,#30363d)}
+.pub-name{font-family:var(--font);color:var(--p-tx,#f0f6fc);font-size:1.4rem;font-weight:900;margin-bottom:3px}
+.pub-handle{color:var(--p-sub,#8b949e);font-size:.82rem}
+.pub-bio{color:var(--p-sub,#8b949e);font-size:.88rem;margin-top:10px;line-height:1.65}
+.pub-links{display:flex;flex-direction:column;gap:10px}
+.pub-lnk{display:flex;align-items:center;gap:12px;padding:14px 17px;background:var(--p-btn-bg,#21262d);border:1.5px solid var(--p-btn-br,#30363d);border-radius:13px;color:var(--p-btn-tx,#f0f6fc);font-family:var(--font);font-size:.88rem;font-weight:700;text-decoration:none;transition:background .18s,transform .18s}
 .pub-lnk:hover{background:var(--p-btn-hv,#30363d);transform:translateY(-2px)}
-.pub-lic{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.05rem;flex-shrink:0}
+.pub-lic{width:33px;height:33px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
 .sn-ic{background:rgba(255,252,0,.15);color:#FFFC00}
 .tk-ic{background:rgba(255,255,255,.1);color:#fff}
 .fb-ic{background:rgba(24,119,242,.15);color:#1877F2}
 .tg-ic{background:rgba(0,136,204,.15);color:#0088CC}
 .ig-ic{background:rgba(228,64,95,.15);color:#E4405F}
-.pub-ft{text-align:center;margin-top:46px;color:var(--p-sub,#8b949e);font-size:.75rem}
+.pub-ft{text-align:center;margin-top:40px;color:var(--p-sub,#8b949e);font-size:.72rem}
 .pub-ft a{color:var(--p-acc,#58a6ff);font-weight:700}
 
-/* ── QR MODAL ── */
+/* ── QR ── */
 .qr-wrap{text-align:center}
-#qr-cv{display:flex;align-items:center;justify-content:center;padding:14px;background:#fff;border-radius:var(--r-md);margin:14px 0}
-.qr-url{font-size:.75rem;color:var(--muted);word-break:break-all;margin-bottom:14px;padding:9px;background:rgba(255,255,255,.04);border-radius:var(--r-sm);border:1px solid var(--border)}
-.qr-acts{display:flex;gap:8px}
+#qr-cv{display:flex;align-items:center;justify-content:center;padding:13px;background:#fff;border-radius:var(--radius);margin:13px 0}
+.qr-url{font-size:.73rem;color:var(--muted);word-break:break-all;margin-bottom:13px;padding:8px;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border)}
+.qr-acts{display:flex;gap:7px}
 
 /* ── PAYMENT ── */
-.pay-pg{padding-bottom:60px}
-.pay-box{background:rgba(124,110,255,.07);border:1px solid rgba(124,110,255,.22);border-radius:var(--r-md);padding:17px;margin-bottom:18px}
-.pay-ttl{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--primary);margin-bottom:6px}
-.pay-num{font-size:1.55rem;font-weight:900;letter-spacing:.04em}
-.pay-steps{margin-bottom:4px}
-.pay-step{display:flex;gap:13px;margin-bottom:14px}
-.ps-n{width:27px;height:27px;border-radius:50%;background:rgba(124,110,255,.15);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:.76rem;font-weight:900;flex-shrink:0;margin-top:2px}
-.ps-t{font-size:.86rem;color:var(--muted);line-height:1.55;padding-top:4px}
-.mth-sel{display:flex;gap:10px;margin-bottom:14px}
-.mth-btn{flex:1;padding:14px;border-radius:var(--r-sm);border:2px solid var(--border);background:transparent;color:var(--muted);font-weight:800;font-size:.88rem;cursor:pointer;transition:all .18s var(--ease);text-align:center}
-.mth-btn.on{border-color:var(--primary);background:rgba(124,110,255,.1);color:var(--primary)}
-.upd{border:2px dashed var(--border);border-radius:var(--r-md);padding:28px 16px;text-align:center;cursor:pointer;transition:all .18s var(--ease);position:relative}
-.upd:hover,.upd.dg{border-color:var(--primary);background:rgba(124,110,255,.05)}
+.pay-box{background:rgba(108,92,231,.07);border:1px solid rgba(108,92,231,.2);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+.pay-ttl{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--primary);margin-bottom:5px}
+[dir="rtl"] .pay-ttl{letter-spacing:0}
+.pay-num{font-size:1.5rem;font-weight:900}
+.pay-step{display:flex;gap:11px;margin-bottom:12px}
+.ps-n{width:24px;height:24px;min-width:24px;border-radius:50%;background:rgba(108,92,231,.15);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:900;margin-top:2px}
+.ps-t{font-size:.84rem;color:var(--muted);line-height:1.55;padding-top:3px}
+.mth-sel{display:flex;gap:9px;margin-bottom:14px}
+.mth-btn{flex:1;padding:13px;border-radius:var(--radius);border:2px solid var(--border);background:transparent;color:var(--muted);font-weight:700;font-size:.86rem;cursor:pointer;transition:all .15s;text-align:center}
+.mth-btn.on{border-color:var(--primary);background:rgba(108,92,231,.1);color:var(--primary)}
+.upd{border:2px dashed var(--border);border-radius:var(--radius);padding:26px 16px;text-align:center;cursor:pointer;transition:border .15s,background .15s;position:relative}
+.upd:hover,.upd.dg{border-color:var(--primary);background:rgba(108,92,231,.05)}
 .upd input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-#upd-prev{max-width:170px;margin:11px auto 0;border-radius:var(--r-sm);display:none}
+#upd-prev{max-width:160px;margin:10px auto 0;border-radius:var(--radius);display:none}
 
 /* ── ADMIN ── */
-.adm-pg{padding-bottom:60px}
-.adm-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:18px}
-.st-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-md);padding:17px;text-align:center}
-.st-n{font-size:1.9rem;font-weight:900;color:var(--primary);line-height:1;margin-bottom:3px}
-.st-l{font-size:.72rem;color:var(--muted);font-weight:700}
-.adm-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
-.at-btn{padding:7px 16px;border-radius:var(--r-sm);background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:.8rem;font-weight:800;cursor:pointer;transition:all .18s var(--ease)}
+.adm-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px}
+.st-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center}
+.st-n{font-size:1.8rem;font-weight:900;color:var(--primary);line-height:1;margin-bottom:3px}
+.st-l{font-size:.7rem;color:var(--muted);font-weight:700}
+.adm-tabs{display:flex;gap:7px;margin-bottom:14px;flex-wrap:wrap}
+.at-btn{padding:7px 14px;border-radius:var(--radius);background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:.78rem;font-weight:700;cursor:pointer;transition:all .15s}
 .at-btn.on{background:var(--primary);border-color:var(--primary);color:#fff}
-.tbl-wrap{border-radius:var(--r-md);border:1px solid var(--border);overflow:hidden;overflow-x:auto;-webkit-overflow-scrolling:touch}
-table.dt{width:100%;border-collapse:collapse;font-size:.83rem}
-.dt th{text-align:left;padding:11px 13px;color:var(--muted);font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);white-space:nowrap}
-.dt td{padding:11px 13px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
+.tbl-wrap{border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.dt{width:100%;border-collapse:collapse;font-size:.82rem}
+.dt th{text-align:left;padding:10px 12px;color:var(--muted);font-size:.67rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap}
+[dir="rtl"] .dt th{text-align:right;letter-spacing:0}
+.dt td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
 .dt tr:last-child td{border-bottom:none}
 .dt tbody tr:hover td{background:rgba(255,255,255,.02)}
-.sb{padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:800}
-.sb-pend{background:rgba(255,168,54,.12);color:var(--warn)}
-.sb-ok{background:rgba(0,212,142,.12);color:var(--success)}
-.sb-rej{background:rgba(255,69,96,.12);color:var(--err)}
+.sb{padding:2px 8px;border-radius:20px;font-size:.68rem;font-weight:800}
+.sb-pend{background:rgba(243,156,18,.12);color:var(--warn)}
+.sb-ok{background:rgba(0,184,148,.12);color:var(--success)}
+.sb-rej{background:rgba(231,76,60,.12);color:var(--err)}
 
-/* ── LOADER & EMPTY ── */
-.pg-ld{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--muted);font-size:.88rem}
-.spin{width:38px;height:38px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:sp .7s linear infinite}
+/* ── LOADER / EMPTY ── */
+.pg-ld{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;color:var(--muted);font-size:.86rem}
+.spin{width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:sp .7s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
-.empty{text-align:center;padding:50px 20px}
-.empty-e{font-size:3.5rem;margin-bottom:13px}
-.empty-t{font-size:1.05rem;font-weight:800;margin-bottom:7px}
-.empty-s{color:var(--muted);font-size:.86rem;margin-bottom:20px}
+.empty{text-align:center;padding:46px 20px}
+.empty-e{font-size:3rem;margin-bottom:11px}
+.empty-t{font-size:1rem;font-weight:700;margin-bottom:6px}
+.empty-s{color:var(--muted);font-size:.84rem;margin-bottom:18px}
 
 /* ── UTILS ── */
 .hid{display:none!important}
+.flex-1{flex:1}
 .row{display:flex;align-items:center}
-.col{flex-direction:column}
-.jb{justify-content:space-between}
-.g2{gap:8px}.g3{gap:12px}
-.mt2{margin-top:8px}.mt3{margin-top:12px}.mt4{margin-top:16px}
-.mb4{margin-bottom:16px}
 .tc{text-align:center}
 .tm{color:var(--muted)}
-.ts{font-size:.83rem}
-.fw{font-weight:800}
-.w100{width:100%}
-.div{height:1px;background:var(--border);margin:18px 0}
-.or-div{display:flex;align-items:center;gap:11px;color:var(--muted);font-size:.76rem;margin:16px 0}
-.or-div::before,.or-div::after{content:'';flex:1;height:1px;background:var(--border)}
-.flex-1{flex:1}
+.ts{font-size:.82rem}
+.fw{font-weight:700}
+.mt3{margin-top:12px}
+.mt4{margin-top:16px}
+.mb4{margin-bottom:16px}
+.g2{gap:8px}
 
 /* ── RESPONSIVE ── */
-@media(min-width:600px){
+@media(min-width:560px){
   .adm-stats{grid-template-columns:repeat(4,1fr)}
   .tpl-grid{grid-template-columns:repeat(3,1fr)}
 }
-@media(max-width:380px){
-  .pc-acts .btn{font-size:.72rem;padding:6px 10px}
-}
+@media(max-width:360px){.pc-acts .btn{font-size:.72rem;padding:5px 9px}}
 </style>
 </head>
 <body>
-<div id="app"><div class="pg-ld"><div class="spin"></div><span>Loading Profilo…</span></div></div>
+<div id="app"><div class="pg-ld"><div class="spin"></div></div></div>
 <div id="tc"></div>
-
 <script>
 'use strict';
 
-/* ═══════════════════════════════════════════
-   CONFIGURATION  ←  FILL THESE IN
-═══════════════════════════════════════════ */
+/* ══════════════════════════════════════
+   FIREBASE CONFIG
+══════════════════════════════════════ */
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyB6rcwRc3MIaRizSqGpfZDEGdGcAwvTgFo",
-  authDomain: "profilo-app-92bc4.firebaseapp.com",
-  projectId: "profilo-app-92bc4",
+  apiKey:            "AIzaSyB6rcwRc3MIaRizSqGpfZDEGdGcAwvTgFo",
+  authDomain:        "profilo-app-92bc4.firebaseapp.com",
+  projectId:         "profilo-app-92bc4",
   messagingSenderId: "1053297665255",
-  appId: "1:1053297665255:web:d0449a7783566e02ac2e42"
+  appId:             "1:1053297665255:web:d0449a7783566e02ac2e42"
 };
-const ADMIN_EMAIL   = "abdulrahmanawl90@gmail.com"; // ← your email
-const ADMIN_WA      = "9647725294559";         // ← 964 + 7725294559
-const ADMIN_PHONE   = "0772 529 4559";
-const FREE_LIMIT    = 2;
-const TPL_PRICE     = "3,000 IQD";
-const XTRA_PRICE    = "5,000 IQD";
+const ADMIN_EMAIL = "abdulrahmanawl90@gmail.com";
+const ADMIN_WA    = "9647725294559";
+const ADMIN_PHONE = "0772 529 4559";
+const FREE_LIMIT  = 2;
+const TPL_PRICE   = "3,000 IQD";
+const XTRA_PRICE  = "5,000 IQD";
 
-/* ═══════════════════════════════════════════
-   TEMPLATES
-═══════════════════════════════════════════ */
-const TPLS = [
-  { id:'classic-dark', nm:'Classic Dark',  em:'🌑', free:true,  bg:'linear-gradient(155deg,#0d1117,#161b22)',
-    v:{'--p-bg':'#0d1117','--p-tx':'#f0f6fc','--p-sub':'#8b949e','--p-btn-bg':'#21262d','--p-btn-br':'#30363d','--p-btn-tx':'#f0f6fc','--p-btn-hv':'#30363d','--p-acc':'#58a6ff','--p-av-bg':'#21262d','--p-av-tx':'#58a6ff'}},
-  { id:'clean-light',  nm:'Clean Light',   em:'☀️', free:true,  bg:'#f0f0f8',
-    v:{'--p-bg':'#f0f0f8','--p-tx':'#1a1a2e','--p-sub':'#57606a','--p-btn-bg':'#ffffff','--p-btn-br':'#d0d7de','--p-btn-tx':'#1a1a2e','--p-btn-hv':'#f0f0f8','--p-acc':'#0969da','--p-av-bg':'#e8f0fe','--p-av-tx':'#0969da'}},
-  { id:'sunset',       nm:'Sunset',        em:'🌅', free:true,  bg:'linear-gradient(135deg,#667eea,#764ba2)',
-    v:{'--p-bg':'linear-gradient(135deg,#667eea 0%,#764ba2 100%)','--p-tx':'#ffffff','--p-sub':'rgba(255,255,255,.72)','--p-btn-bg':'rgba(255,255,255,.15)','--p-btn-br':'rgba(255,255,255,.32)','--p-btn-tx':'#ffffff','--p-btn-hv':'rgba(255,255,255,.24)','--p-acc':'#ffffff','--p-av-bg':'rgba(255,255,255,.22)','--p-av-tx':'#ffffff'}},
-  { id:'neon-night',   nm:'Neon Night',    em:'💚', free:false, bg:'#050505',
-    v:{'--p-bg':'#050505','--p-tx':'#ffffff','--p-sub':'#4b5563','--p-btn-bg':'rgba(0,255,135,.05)','--p-btn-br':'#00ff87','--p-btn-tx':'#00ff87','--p-btn-hv':'rgba(0,255,135,.13)','--p-acc':'#00ff87','--p-av-bg':'rgba(0,255,135,.1)','--p-av-tx':'#00ff87'}},
-  { id:'forest',       nm:'Forest',        em:'🌿', free:false, bg:'linear-gradient(135deg,#134e4a,#064e3b)',
-    v:{'--p-bg':'linear-gradient(135deg,#134e4a 0%,#064e3b 100%)','--p-tx':'#ecfdf5','--p-sub':'#a7f3d0','--p-btn-bg':'rgba(110,231,183,.08)','--p-btn-br':'#6ee7b7','--p-btn-tx':'#6ee7b7','--p-btn-hv':'rgba(110,231,183,.18)','--p-acc':'#34d399','--p-av-bg':'rgba(52,211,153,.15)','--p-av-tx':'#34d399'}},
-  { id:'ocean',        nm:'Ocean Deep',    em:'🌊', free:false, bg:'linear-gradient(180deg,#0c1445,#0d47a1)',
-    v:{'--p-bg':'linear-gradient(180deg,#0c1445 0%,#0d47a1 100%)','--p-tx':'#e8eaf6','--p-sub':'#b3c5ff','--p-btn-bg':'rgba(130,177,255,.08)','--p-btn-br':'#82b1ff','--p-btn-tx':'#82b1ff','--p-btn-hv':'rgba(130,177,255,.17)','--p-acc':'#82b1ff','--p-av-bg':'rgba(130,177,255,.12)','--p-av-tx':'#82b1ff'}},
-  { id:'biz-pro',      nm:'Business Pro',  em:'💼', free:false, bg:'#111827',
-    v:{'--p-bg':'#111827','--p-tx':'#f9fafb','--p-sub':'#9ca3af','--p-btn-bg':'#374151','--p-btn-br':'#4b5563','--p-btn-tx':'#f9fafb','--p-btn-hv':'#4b5563','--p-acc':'#f59e0b','--p-av-bg':'rgba(245,158,11,.12)','--p-av-tx':'#f59e0b'}},
-  { id:'retro-wave',   nm:'Retro Wave',    em:'🎸', free:false, bg:'linear-gradient(180deg,#0f0024,#2d0060)',
-    v:{'--p-bg':'linear-gradient(180deg,#0f0024 0%,#2d0060 100%)','--p-tx':'#ffffff','--p-sub':'#cc88ff','--p-btn-bg':'transparent','--p-btn-br':'#ff0080','--p-btn-tx':'#ff0080','--p-btn-hv':'rgba(255,0,128,.1)','--p-acc':'#ff0080','--p-av-bg':'rgba(255,0,128,.12)','--p-av-tx':'#ff0080'}},
-  { id:'gold-lux',     nm:'Gold Luxury',   em:'✨', free:false, bg:'linear-gradient(160deg,#000,#1a1200)',
-    v:{'--p-bg':'linear-gradient(160deg,#000000 0%,#1a1200 100%)','--p-tx':'#f5e6c8','--p-sub':'#9c8a5a','--p-btn-bg':'rgba(212,175,55,.07)','--p-btn-br':'#d4af37','--p-btn-tx':'#d4af37','--p-btn-hv':'rgba(212,175,55,.15)','--p-acc':'#d4af37','--p-av-bg':'rgba(212,175,55,.1)','--p-av-tx':'#d4af37'}},
-  { id:'aurora',       nm:'Aurora',        em:'🌌', free:false, bg:'linear-gradient(135deg,#0f0c29,#302b63,#24243e)',
-    v:{'--p-bg':'linear-gradient(135deg,#0f0c29 0%,#302b63 50%,#24243e 100%)','--p-tx':'#f8f9fa','--p-sub':'#9ba4b5','--p-btn-bg':'rgba(123,237,159,.07)','--p-btn-br':'#7bed9f','--p-btn-tx':'#7bed9f','--p-btn-hv':'rgba(123,237,159,.15)','--p-acc':'#7bed9f','--p-av-bg':'rgba(123,237,159,.1)','--p-av-tx':'#7bed9f'}},
-];
+/* ══════════════════════════════════════
+   LANGUAGE  (EN + Kurdish Sorani)
+══════════════════════════════════════ */
+let lang = localStorage.getItem('pf_lang') || 'en';
+const T = {
+en:{
+  appName:'Profilo', tagline:'Your digital identity in one link ✨',
+  login:'Login', register:'Register', email:'Email', password:'Password',
+  fullName:'Full Name', createAccount:'Create Account',
+  continueGoogle:'Continue with Google', signupGoogle:'Sign up with Google', or:'or',
+  secure:'🔒 Secure · Mobile-friendly · Free to start',
+  hello:'Hello', managePages:'Manage your Profilo pages',
+  profilesUsed:'Profiles used', createNew:'Create New Profile',
+  noProfiles:'No profiles yet',
+  noProfilesSub:'Create your first digital profile and share all your links in one place.',
+  createFirst:'Create Profile', needMore:'Need more?',
+  unlockExtra:'Unlock extra slots', unlockMoreBtn:'Unlock More Profile Slots',
+  edit:'Edit', link:'Link', delete:'Delete',
+  createProfile:'Create Profile', fillDetails:'Fill in your details and pick a template',
+  username:'Username', usernameHint:'3–30 chars · letters, numbers, _ . -',
+  displayName:'Display Name', bio:'Bio', bioOpt:'Bio (optional)',
+  socialLinks:'Social Links (all optional)', chooseTemplate:'Choose Template',
+  createBtn:'Create Profile', back:'Back',
+  editProfile:'Edit Profile', saveChanges:'Save Changes',
+  payment:'Payment', amountToPay:'Amount to Pay',
+  payStep1:'Send {p} to {n} via FastPay or FIB',
+  payStep2:'Fill in your details and upload the payment screenshot below',
+  payStep3:'Click Submit — WhatsApp will open to notify the admin',
+  payMethod:'Payment Method', payScreen:'Payment Screenshot',
+  tapUpload:'Tap to upload screenshot', jpgpng:'JPG or PNG',
+  submitWA:'Submit & Open WhatsApp',
+  adminPanel:'Admin Panel', manageAll:'Manage users, orders & profiles',
+  orders:'Orders', users:'Users', profiles:'Profiles',
+  approve:'Approve', reject:'Reject', noOrders:'No orders yet',
+  free:'Free', unlocked:'Unlocked', price:'Price',
+  payUnlock:'Pay & Unlock', premiumTemplate:'Premium template',
+  delProfile:'Delete Profile?', delConfirm:'This cannot be undone.',
+  confirmDel:'Delete', cancel:'Cancel',
+  myAccount:'My Account', dashboard:'Dashboard', logout:'Logout',
+  loading:'Loading…', qrCode:'Your QR Code', download:'Download', copy:'Copy Link',
+  madeWith:'Made with',
+  snapchat:'Snapchat', tiktok:'TikTok', facebook:'Facebook',
+  telegram:'Telegram', instagram:'Instagram',
+  // validation
+  fillAll:'Please fill in all fields.',
+  pwMin:'Password must be at least 6 characters.',
+  unReq:'Username is required.', invalidUn:'Username: 3–30 chars, a-z 0-9 _ . -',
+  dnReq:'Display name is required.', tplLocked:'That template is locked. Unlock it first.',
+  unTaken:'Username already taken. Choose another.',
+  nameReq:'Enter your full name.', phoneReq:'Enter your phone number.',
+  ssReq:'Upload payment screenshot.', tooLarge:'Screenshot too large — please crop or reduce size first.',
+  // toasts
+  welcomeBack:'Welcome back 👋', accCreated:'Account created! Welcome 🎉',
+  loggedOut:'Logged out', profCreated:'Profile created! 🎉',
+  saved:'Saved! ✅', profDeleted:'Profile deleted.',
+  linkCopied:'Link copied! 🔗', qrDl:'QR downloaded! 📥',
+  submitted:"Submitted! We'll review shortly 📱", compressing:'Compressing screenshot…',
+  orderOk:'Order approved! ✅', orderRej:'Order rejected.',
+  noNet:'Check your internet connection.',
+  adminOnly:'Admin access only.',
+},
+ku:{
+  appName:'پڕۆفیلۆ', tagline:'ناسنامەی دیجیتاڵیت لە یەک لینکدا ✨',
+  login:'چوونەژوورەوە', register:'تۆمارکردن', email:'ئیمەیڵ', password:'وشەی نهێنی',
+  fullName:'ناوی تەواو', createAccount:'دروستکردنی ئەکاونت',
+  continueGoogle:'بەردەوامبوون بە گووگڵ', signupGoogle:'تۆمارکردن بە گووگڵ', or:'یان',
+  secure:'🔒 پارێزراو · گونجاوی مۆبایل · خۆڕایی',
+  hello:'سڵاو', managePages:'بڕوانامەکانت بەڕێوەببە',
+  profilesUsed:'بڕوانامەی بەکارهێنراو', createNew:'دروستکردنی بڕوانامەی نوێ',
+  noProfiles:'هێشتا هیچ بڕوانامەیەک نییە',
+  noProfilesSub:'یەکەم بڕوانامەی دیجیتاڵیت دروست بکە و هەموو لینکەکانت لە یەک شوێندا هاوبەش بکە.',
+  createFirst:'دروستکردنی بڕوانامە', needMore:'دەتەوێت زیاتر؟',
+  unlockExtra:'کردنەوەی شوێنی زیادە', unlockMoreBtn:'کردنەوەی شوێنی زیادەتر بۆ بڕوانامە',
+  edit:'دەستکاری', link:'لینک', delete:'سڕینەوە',
+  createProfile:'دروستکردنی بڕوانامە', fillDetails:'زانیارییەکانت پڕبکەوە و قاڵبێک هەڵبژێرە',
+  username:'ناوی بەکارهێنەر', usernameHint:'٣–٣٠ پیت · پیت، ژمارە، _ . -',
+  displayName:'ناوی پیشاندراو', bio:'دەربارە', bioOpt:'دەربارە (ئارەزوومەندانە)',
+  socialLinks:'لینکەکانی تۆڕی کۆمەڵایەتی (هەموو ئارەزوومەندانە)', chooseTemplate:'دیاریکردنی قاڵب',
+  createBtn:'دروستکردنی بڕوانامە', back:'گەڕانەوە',
+  editProfile:'دەستکاریکردنی بڕوانامە', saveChanges:'پاشەکەوتکردنی گۆڕانکارییەکان',
+  payment:'پارەدان', amountToPay:'بڕی پارەی پێدەدرێت',
+  payStep1:'${p} بنێرە بۆ ${n} لە ڕێگەی فاستپەی یان FIB',
+  payStep2:'زانیارییەکانت پڕبکەوە و وێنەی پارەدانەکە بار بکە',
+  payStep3:'کلیک بکە سەر ناردن — واتساپ دەکرێتەوە بۆ ئاگادارکردنەوەی بەڕێوەبەر',
+  payMethod:'شێوازی پارەدان', payScreen:'وێنەی پارەدان',
+  tapUpload:'بەستە بۆ بارکردنی وێنە', jpgpng:'JPG یان PNG',
+  submitWA:'ناردن و کردنەوەی واتساپ',
+  adminPanel:'پانێڵی بەڕێوەبەر', manageAll:'بەڕێوەبردنی بەکارهێنەران، داواکاریەکان و بڕوانامەکان',
+  orders:'داواکاریەکان', users:'بەکارهێنەران', profiles:'بڕوانامەکان',
+  approve:'پەسەندکردن', reject:'ڕەتکردنەوە', noOrders:'هێشتا هیچ داواکارییەک نییە',
+  free:'خۆڕایی', unlocked:'کراوەتەوە', price:'نرخ',
+  payUnlock:'پارەبدە و بیکەرەوە', premiumTemplate:'قاڵبی پریمیەم',
+  delProfile:'سڕینەوەی بڕوانامە؟', delConfirm:'ئەمە پووچەڵناکرێتەوە.',
+  confirmDel:'سڕینەوە', cancel:'پاشگەزبوونەوە',
+  myAccount:'ئەکاونتەکەم', dashboard:'داشبۆرد', logout:'چوونەدەرەوە',
+  loading:'چاوەڕوان بە…', qrCode:'کۆدی QR ی تۆ', download:'داگرتن', copy:'کۆپیکردنی لینک',
+  madeWith:'دروستکراوە بە',
+  snapchat:'سنابچات', tiktok:'تیکتۆک', facebook:'فەیسبووک',
+  telegram:'تێلێگرام', instagram:'ئینستاگرام',
+  fillAll:'تکایە هەموو خانەکان پڕبکەوە.',
+  pwMin:'وشەی نهێنی دەبێت کەمترین ٦ پیت بێت.',
+  unReq:'ناوی بەکارهێنەر پێویستە.', invalidUn:'ناوی بەکارهێنەر: ٣–٣٠ پیت',
+  dnReq:'ناوی پیشاندراو پێویستە.', tplLocked:'ئەو قاڵبە قفڵکراوە. پێشتر بیکەرەوە.',
+  unTaken:'ناوی بەکارهێنەر وەرگیراوە. یەکی تر هەڵبژێرە.',
+  nameReq:'ناوی تەواوت بنووسە.', phoneReq:'ژمارەی تەلەفۆنت بنووسە.',
+  ssReq:'وێنەی پارەدان بار بکە.', tooLarge:'وێنەکە زۆر گەورەیە — تکایە پێشتر بچووکی بکەوە.',
+  welcomeBack:'بەخێربێیتەوە 👋', accCreated:'ئەکاونت دروستکرا! بەخێربێی 🎉',
+  loggedOut:'چوویتەدەرەوە', profCreated:'بڕوانامە دروستکرا! 🎉',
+  saved:'پاشەکەوتکرا! ✅', profDeleted:'بڕوانامە سڕایەوە.',
+  linkCopied:'لینک کۆپیکرا! 🔗', qrDl:'QR داگیرا! 📥',
+  submitted:'نرا! بەزووترین کاتدا پێداچوونەوە دەکەین 📱', compressing:'کوچکردنی وێنەکە…',
+  orderOk:'داواکاری پەسەندکرا! ✅', orderRej:'داواکاری ڕەتکرایەوە.',
+  noNet:'پەیوەندی ئینتەرنێتت بپشکنە.',
+  adminOnly:'تەنها بەڕێوەبەر دەتوانێت بچێتە ژوورەوە.',
+}};
+function t(k){ return T[lang][k] || T.en[k] || k }
 
-/* ═══════════════════════════════════════════
-   FIREBASE
-═══════════════════════════════════════════ */
-try {
-  firebase.initializeApp(FIREBASE_CONFIG);
-} catch(e) {
-  document.getElementById('app').innerHTML = `
-    <div class="pg-ld" style="flex-direction:column;gap:16px;padding:32px;text-align:center">
-      <div style="font-size:3rem">⚠️</div>
-      <h2 style="color:var(--err)">Firebase Setup Error</h2>
-      <p style="color:var(--muted);max-width:340px">Check that your Firebase config values are correct in index.html<br><br><code style="font-size:.75rem;color:var(--warn)">${e.message}</code></p>
-    </div>`;
-  throw e;
-}
-const auth = firebase.auth();
-const db   = firebase.firestore();
-
-/* ═══════════════════════════════════════════
-   STATE
-═══════════════════════════════════════════ */
-const S = { user:null, ud:null, loading:true };
-let route='', param='', param2='';
-let selTpl = 'classic-dark';
-let payFile = null, payMethod = 'fastpay';
-
-/* ═══════════════════════════════════════════
-   ROUTER
-═══════════════════════════════════════════ */
-function go(path){ window.location.hash = path ? '/'+path : '/' }
-function handleRoute(){
-  const h = window.location.hash.replace(/^#\/?/,'') || '';
-  const pts = h.split('/');
-  route  = pts[0] || '';
-  param  = pts[1] || '';
-  param2 = pts[2] || '';
+function toggleLang(){
+  lang = lang==='en' ? 'ku' : 'en';
+  localStorage.setItem('pf_lang', lang);
+  document.documentElement.lang = lang==='ku' ? 'ckb' : 'en';
+  document.documentElement.dir  = lang==='ku' ? 'rtl' : 'ltr';
   render();
 }
-window.addEventListener('hashchange', handleRoute);
+// Apply saved lang on load
+document.documentElement.lang = lang==='ku' ? 'ckb' : 'en';
+document.documentElement.dir  = lang==='ku' ? 'rtl' : 'ltr';
 
-/* ═══════════════════════════════════════════
-   AUTH STATE
-═══════════════════════════════════════════ */
-// Safety net — if Firebase never responds within 8s, stop loading anyway
-const _authTimeout = setTimeout(() => {
-  if(S.loading){ S.loading=false; handleRoute(); }
-}, 8000);
+/* ══════════════════════════════════════
+   TEMPLATES
+══════════════════════════════════════ */
+const TPLS = [
+  {id:'classic-dark',nm:'Classic Dark',     em:'🌑',free:true, bg:'#0d1117',img:'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=600&q=70',
+   v:{'--p-bg':'#0d1117','--p-tx':'#f0f6fc','--p-sub':'#8b949e','--p-btn-bg':'#21262d','--p-btn-br':'#30363d','--p-btn-tx':'#f0f6fc','--p-btn-hv':'#30363d','--p-acc':'#58a6ff','--p-av-bg':'#21262d','--p-av-tx':'#58a6ff'}},
+  {id:'clean-light', nm:'Clean Light',      em:'☀️',free:true, bg:'#f0f0f8',img:'https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?w=600&q=70',
+   v:{'--p-bg':'#f0f0f8','--p-tx':'#1a1a2e','--p-sub':'#57606a','--p-btn-bg':'#ffffff','--p-btn-br':'#d0d7de','--p-btn-tx':'#1a1a2e','--p-btn-hv':'#f0f0f8','--p-acc':'#0969da','--p-av-bg':'#e8f0fe','--p-av-tx':'#0969da'}},
+  {id:'sunset',      nm:'Sunset',           em:'🌅',free:true, bg:'linear-gradient(135deg,#667eea,#764ba2)',img:'https://images.unsplash.com/photo-1495616811223-4d98c6e9c869?w=600&q=70',
+   v:{'--p-bg':'linear-gradient(135deg,#667eea 0%,#764ba2 100%)','--p-tx':'#fff','--p-sub':'rgba(255,255,255,.72)','--p-btn-bg':'rgba(255,255,255,.15)','--p-btn-br':'rgba(255,255,255,.32)','--p-btn-tx':'#fff','--p-btn-hv':'rgba(255,255,255,.24)','--p-acc':'#fff','--p-av-bg':'rgba(255,255,255,.22)','--p-av-tx':'#fff'}},
+  {id:'neon-night',  nm:'Neon Night',       em:'💚',free:false,bg:'#050505',img:'https://images.unsplash.com/photo-1519677100203-a0e668c92439?w=600&q=70',
+   v:{'--p-bg':'#050505','--p-tx':'#fff','--p-sub':'#4b5563','--p-btn-bg':'rgba(0,255,135,.05)','--p-btn-br':'#00ff87','--p-btn-tx':'#00ff87','--p-btn-hv':'rgba(0,255,135,.13)','--p-acc':'#00ff87','--p-av-bg':'rgba(0,255,135,.1)','--p-av-tx':'#00ff87'}},
+  {id:'forest',      nm:'Forest',           em:'🌿',free:false,bg:'linear-gradient(135deg,#134e4a,#064e3b)',img:'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=600&q=70',
+   v:{'--p-bg':'linear-gradient(135deg,#134e4a 0%,#064e3b 100%)','--p-tx':'#ecfdf5','--p-sub':'#a7f3d0','--p-btn-bg':'rgba(110,231,183,.08)','--p-btn-br':'#6ee7b7','--p-btn-tx':'#6ee7b7','--p-btn-hv':'rgba(110,231,183,.18)','--p-acc':'#34d399','--p-av-bg':'rgba(52,211,153,.15)','--p-av-tx':'#34d399'}},
+  {id:'ocean',       nm:'Ocean Deep',       em:'🌊',free:false,bg:'linear-gradient(180deg,#0c1445,#0d47a1)',img:'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&q=70',
+   v:{'--p-bg':'linear-gradient(180deg,#0c1445 0%,#0d47a1 100%)','--p-tx':'#e8eaf6','--p-sub':'#b3c5ff','--p-btn-bg':'rgba(130,177,255,.08)','--p-btn-br':'#82b1ff','--p-btn-tx':'#82b1ff','--p-btn-hv':'rgba(130,177,255,.17)','--p-acc':'#82b1ff','--p-av-bg':'rgba(130,177,255,.12)','--p-av-tx':'#82b1ff'}},
+  {id:'biz-pro',     nm:'Business Pro',     em:'💼',free:false,bg:'#111827',img:'https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=70',
+   v:{'--p-bg':'#111827','--p-tx':'#f9fafb','--p-sub':'#9ca3af','--p-btn-bg':'#374151','--p-btn-br':'#4b5563','--p-btn-tx':'#f9fafb','--p-btn-hv':'#4b5563','--p-acc':'#f59e0b','--p-av-bg':'rgba(245,158,11,.12)','--p-av-tx':'#f59e0b'}},
+  {id:'retro-wave',  nm:'Retro Wave',       em:'🎸',free:false,bg:'linear-gradient(180deg,#0f0024,#2d0060)',img:'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=600&q=70',
+   v:{'--p-bg':'linear-gradient(180deg,#0f0024 0%,#2d0060 100%)','--p-tx':'#fff','--p-sub':'#cc88ff','--p-btn-bg':'transparent','--p-btn-br':'#ff0080','--p-btn-tx':'#ff0080','--p-btn-hv':'rgba(255,0,128,.1)','--p-acc':'#ff0080','--p-av-bg':'rgba(255,0,128,.12)','--p-av-tx':'#ff0080'}},
+  {id:'gold-lux',    nm:'Gold Luxury',      em:'✨',free:false,bg:'linear-gradient(160deg,#000,#1a1200)',img:'https://images.unsplash.com/photo-1518544866330-95c39ba23a4d?w=600&q=70',
+   v:{'--p-bg':'linear-gradient(160deg,#000 0%,#1a1200 100%)','--p-tx':'#f5e6c8','--p-sub':'#9c8a5a','--p-btn-bg':'rgba(212,175,55,.07)','--p-btn-br':'#d4af37','--p-btn-tx':'#d4af37','--p-btn-hv':'rgba(212,175,55,.15)','--p-acc':'#d4af37','--p-av-bg':'rgba(212,175,55,.1)','--p-av-tx':'#d4af37'}},
+  {id:'aurora',      nm:'Aurora',           em:'🌌',free:false,bg:'linear-gradient(135deg,#0f0c29,#302b63,#24243e)',img:'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=600&q=70',
+   v:{'--p-bg':'linear-gradient(135deg,#0f0c29 0%,#302b63 50%,#24243e 100%)','--p-tx':'#f8f9fa','--p-sub':'#9ba4b5','--p-btn-bg':'rgba(123,237,159,.07)','--p-btn-br':'#7bed9f','--p-btn-tx':'#7bed9f','--p-btn-hv':'rgba(123,237,159,.15)','--p-acc':'#7bed9f','--p-av-bg':'rgba(123,237,159,.1)','--p-av-tx':'#7bed9f'}},
+];
 
-auth.onAuthStateChanged(async u => {
-  clearTimeout(_authTimeout);
-  S.loading = false;
-  if(u){ S.user=u; await loadUD(u.uid); }
-  else { S.user=null; S.ud=null; }
+/* ══════════════════════════════════════
+   FIREBASE INIT
+══════════════════════════════════════ */
+let auth, db;
+try{
+  firebase.initializeApp(FIREBASE_CONFIG);
+  auth = firebase.auth();
+  db   = firebase.firestore();
+}catch(e){
+  document.getElementById('app').innerHTML=`<div class="pg-ld" style="flex-direction:column;gap:14px;padding:24px;text-align:center"><div style="font-size:2.5rem">⚠️</div><h3 style="color:var(--err)">Firebase Error</h3><p class="tm ts">${e.message}</p></div>`;
+  throw e;
+}
+
+/* ══════════════════════════════════════
+   STATE
+══════════════════════════════════════ */
+const S={user:null,ud:null,loading:true};
+let route='',param='',param2='';
+let selTpl='classic-dark', payFile=null, payMethod='fastpay';
+
+/* ══════════════════════════════════════
+   ROUTER
+══════════════════════════════════════ */
+function go(p){ window.location.hash = p?'/'+p:'/' }
+function handleRoute(){
+  const h=window.location.hash.replace(/^#\/?/,'')||'';
+  const pts=h.split('/');
+  route=pts[0]||''; param=pts[1]||''; param2=pts[2]||'';
+  render();
+}
+window.addEventListener('hashchange',handleRoute);
+
+/* ── AUTH STATE ── */
+const _t=setTimeout(()=>{ if(S.loading){S.loading=false;handleRoute()} },8000);
+let _udUnsub=null;
+auth.onAuthStateChanged(async u=>{
+  clearTimeout(_t); S.loading=false;
+  if(_udUnsub){_udUnsub();_udUnsub=null}
+  if(u){
+    S.user=u; await loadUD(u.uid);
+    // Live-sync: the instant admin approves an order, unlockedTemplates / extraProfilesPaid
+    // update here automatically — no manual refresh needed.
+    _udUnsub=db.collection('users').doc(u.uid).onSnapshot(doc=>{
+      if(!doc.exists) return;
+      const prevUnlocked=(S.ud?.unlockedTemplates||[]).length;
+      const prevExtra=S.ud?.extraProfilesPaid;
+      S.ud=doc.data();
+      const newUnlocked=(S.ud.unlockedTemplates||[]).length;
+      if(newUnlocked>prevUnlocked || (S.ud.extraProfilesPaid&&!prevExtra)){
+        toast(lang==='ku'?'داواکارییەکەت پەسەندکرا! ئێستا کراوەتەوە 🎉':'Your order was approved — unlocked now! 🎉','s');
+      }
+      if(route==='dashboard') render();
+      else if((route==='create'||route==='edit') && document.getElementById('tg')){
+        document.getElementById('tg').innerHTML=tplGrid();
+      }
+    });
+  } else {
+    S.user=null; S.ud=null;
+  }
   handleRoute();
 });
 
 async function loadUD(uid){
   try{
-    const d = await db.collection('users').doc(uid).get();
-    if(d.exists){ S.ud = d.data(); }
-    else{
-      const nd = {
-        email: S.user.email,
-        displayName: S.user.displayName||'',
-        profileCount:0, unlockedTemplates:[],
-        extraProfilesPaid:false,
-        isAdmin: S.user.email===ADMIN_EMAIL,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      };
-      await db.collection('users').doc(uid).set(nd);
-      S.ud = nd;
+    const ref=db.collection('users').doc(uid);
+    const d=await ref.get();
+    const freshIsAdmin=S.user.email===ADMIN_EMAIL;
+    if(d.exists){
+      S.ud=d.data();
+      // Keep email/displayName/isAdmin always in sync (fixes blank email for Google sign-ins
+      // on accounts created before this field existed, or after a name/email change)
+      const patch={};
+      if(S.ud.email!==S.user.email) patch.email=S.user.email;
+      if(!S.ud.displayName && S.user.displayName) patch.displayName=S.user.displayName;
+      if(S.ud.isAdmin!==freshIsAdmin) patch.isAdmin=freshIsAdmin;
+      if(Object.keys(patch).length){
+        await ref.set(patch,{merge:true});
+        S.ud={...S.ud,...patch};
+      }
+    } else {
+      const nd={email:S.user.email,displayName:S.user.displayName||'',
+        profileCount:0,unlockedTemplates:[],extraProfilesPaid:false,
+        isAdmin:freshIsAdmin,
+        createdAt:firebase.firestore.FieldValue.serverTimestamp()};
+      await ref.set(nd); S.ud=nd;
     }
-  } catch(e){ console.error('loadUD error:',e) }
+  }catch(e){console.error('loadUD:',e)}
 }
 
-/* ── AUTH FNS ── */
+/* ══════════════════════════════════════
+   AUTH FUNCTIONS
+══════════════════════════════════════ */
 async function doLogin(em,pw){
-  try{
-    await auth.signInWithEmailAndPassword(em,pw);
-    toast('Welcome back 👋','s'); go('dashboard');
-  } catch(e){ toast(aerr(e.code),'e') }
+  try{await auth.signInWithEmailAndPassword(em,pw);toast(t('welcomeBack'),'s');go('dashboard');}
+  catch(e){toast(aerr(e.code),'e')}
 }
 async function doReg(nm,em,pw){
   try{
-    const c = await auth.createUserWithEmailAndPassword(em,pw);
+    const c=await auth.createUserWithEmailAndPassword(em,pw);
     await c.user.updateProfile({displayName:nm});
-    S.user=c.user; await loadUD(c.user.uid);
-    toast('Account created! Welcome 🎉','s'); go('dashboard');
-  } catch(e){ toast(aerr(e.code),'e') }
+    S.user=c.user;await loadUD(c.user.uid);
+    toast(t('accCreated'),'s');go('dashboard');
+  }catch(e){toast(aerr(e.code),'e')}
 }
-async function doLogout(){ await auth.signOut(); go(''); toast('Logged out','i') }
 async function doGoogle(){
   try{
-    const provider=new firebase.auth.GoogleAuthProvider();
-    provider.setCustomParameters({prompt:'select_account'});
-    const result=await auth.signInWithPopup(provider);
-    const isNew=result.additionalUserInfo?.isNewUser;
-    S.user=result.user; await loadUD(result.user.uid);
-    toast(isNew?'Account created! Welcome 🎉':'Welcome back 👋','s');
+    const p=new firebase.auth.GoogleAuthProvider();
+    p.setCustomParameters({prompt:'select_account'});
+    const r=await auth.signInWithPopup(p);
+    S.user=r.user;await loadUD(r.user.uid);
+    toast(r.additionalUserInfo?.isNewUser?t('accCreated'):t('welcomeBack'),'s');
     go('dashboard');
-  } catch(e){
-    if(e.code!=='auth/popup-closed-by-user') toast(aerr(e.code),'e');
-  }
+  }catch(e){if(e.code!=='auth/popup-closed-by-user')toast(aerr(e.code),'e')}
 }
+async function doLogout(){await auth.signOut();go('');toast(t('loggedOut'),'i')}
 function aerr(c){
-  return ({
-    'auth/user-not-found':'No account with that email.',
-    'auth/wrong-password':'Incorrect password.',
-    'auth/invalid-credential':'Invalid email or password.',
-    'auth/email-already-in-use':'Email already registered.',
-    'auth/weak-password':'Password must be 6+ characters.',
-    'auth/invalid-email':'Invalid email address.',
+  return({'auth/user-not-found':'No account with that email.','auth/wrong-password':'Incorrect password.',
+    'auth/invalid-credential':'Invalid email or password.','auth/email-already-in-use':'Email already registered.',
+    'auth/weak-password':'Password must be 6+ characters.','auth/invalid-email':'Invalid email address.',
     'auth/too-many-requests':'Too many attempts. Try again later.',
-    'auth/popup-blocked':'Popup blocked — allow popups and try again.',
-    'auth/cancelled-popup-request':'Sign-in cancelled.',
-  })[c] || 'Something went wrong. Try again.';
+    'auth/popup-blocked':'Popup blocked — allow popups and retry.',
+  })[c]||'Something went wrong. Try again.';
 }
 
-/* ═══════════════════════════════════════════
-   PROFILE FNS
-═══════════════════════════════════════════ */
-async function ckUser(un){ const d=await db.collection('usernames').doc(un).get(); return !d.exists }
+/* ══════════════════════════════════════
+   PROFILE FUNCTIONS
+══════════════════════════════════════ */
+async function ckUN(un){const d=await db.collection('usernames').doc(un).get();return !d.exists}
 
 async function createProfile(data){
-  const uid=S.user.uid, ud=S.ud||{};
-  const max = ud.extraProfilesPaid ? FREE_LIMIT+2 : FREE_LIMIT;
-  if((ud.profileCount||0)>=max){ toast(`Profile limit reached (${max})`, 'e'); return null }
-  const un = data.username.toLowerCase().trim();
-  if(!await ckUser(un)){ toast('Username taken. Choose another.','e'); return null }
+  const uid=S.user.uid,ud=S.ud||{};
+  const max=ud.extraProfilesPaid?FREE_LIMIT+2:FREE_LIMIT;
+  if((ud.profileCount||0)>=max){toast(t('limitReached')+` (${max})`,'e');return null}
+  const un=data.username.toLowerCase().trim();
+  if(!await ckUN(un)){toast(t('unTaken'),'e');return null}
   try{
     const ref=db.collection('profiles').doc();
-    const pd={
-      id:ref.id, userId:uid, username:un,
-      displayName:data.displayName||'', bio:data.bio||'',
-      template:data.template, snapchat:data.snapchat||'',
-      tiktok:data.tiktok||'', facebook:data.facebook||'',
-      telegram:data.telegram||'', instagram:data.instagram||'',
+    const pd={id:ref.id,userId:uid,username:un,displayName:data.displayName||'',bio:data.bio||'',
+      template:data.template,snapchat:data.snapchat||'',tiktok:data.tiktok||'',
+      facebook:data.facebook||'',telegram:data.telegram||'',instagram:data.instagram||'',
       createdAt:firebase.firestore.FieldValue.serverTimestamp(),
-      updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
-    };
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
     const b=db.batch();
     b.set(ref,pd);
     b.set(db.collection('usernames').doc(un),{uid,profileId:ref.id});
     b.update(db.collection('users').doc(uid),{profileCount:firebase.firestore.FieldValue.increment(1)});
     await b.commit();
     S.ud.profileCount=(S.ud.profileCount||0)+1;
-    toast('Profile created! 🎉','s'); return ref.id;
-  } catch(e){ console.error(e); toast('Failed to create profile. Try again.','e'); return null }
+    toast(t('profCreated'),'s');return ref.id;
+  }catch(e){console.error(e);toast('Failed to create profile.','e');return null}
 }
 
 async function updProfile(pid,data,oldUN){
   try{
     const b=db.batch();
-    if(data.username && data.username!==oldUN){
-      if(!await ckUser(data.username)){ toast('Username taken.','e'); return false }
+    if(data.username&&data.username!==oldUN){
+      if(!await ckUN(data.username)){toast(t('unTaken'),'e');return false}
       b.delete(db.collection('usernames').doc(oldUN));
       b.set(db.collection('usernames').doc(data.username),{uid:S.user.uid,profileId:pid});
     }
     b.update(db.collection('profiles').doc(pid),{...data,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
-    await b.commit();
-    toast('Saved! ✅','s'); return true;
-  } catch(e){ console.error(e); toast('Update failed.','e'); return false }
+    await b.commit();toast(t('saved'),'s');return true;
+  }catch(e){console.error(e);toast('Update failed.','e');return false}
 }
 
 async function delProfile(pid){
@@ -568,337 +627,256 @@ async function delProfile(pid){
     b.update(db.collection('users').doc(S.user.uid),{profileCount:firebase.firestore.FieldValue.increment(-1)});
     await b.commit();
     S.ud.profileCount=Math.max(0,(S.ud.profileCount||0)-1);
-    toast('Profile deleted.','i');
-  } catch(e){ console.error(e); toast('Delete failed.','e') }
+    toast(t('profDeleted'),'i');
+  }catch(e){console.error(e);toast('Delete failed.','e')}
 }
 
 async function getUserProfiles(uid){
   const s=await db.collection('profiles').where('userId','==',uid).get();
-  const list=s.docs.map(d=>({id:d.id,...d.data()}));
-  list.sort((a,b)=>(b.createdAt?.toMillis()||0)-(a.createdAt?.toMillis()||0));
-  return list;
+  return s.docs.map(d=>({id:d.id,...d.data()}))
+    .sort((a,b)=>(b.createdAt?.toMillis()||0)-(a.createdAt?.toMillis()||0));
 }
-
 async function getProfileByUN(un){
   const s=await db.collection('profiles').where('username','==',un.toLowerCase()).limit(1).get();
-  if(s.empty) return null;
-  return {id:s.docs[0].id,...s.docs[0].data()};
+  return s.empty?null:{id:s.docs[0].id,...s.docs[0].data()};
 }
 
-/* ═══════════════════════════════════════════
-   IMAGE COMPRESSOR  (no Storage needed — free!)
-   Shrinks screenshot → JPEG base64 stored in Firestore
-═══════════════════════════════════════════ */
+/* ══════════════════════════════════════
+   IMAGE COMPRESS + PAYMENT
+══════════════════════════════════════ */
 function compressImage(file){
-  return new Promise((resolve,reject)=>{
-    const reader=new FileReader();
-    reader.onerror=reject;
-    reader.onload=e=>{
-      const img=new Image();
-      img.onerror=reject;
+  return new Promise((res,rej)=>{
+    const r=new FileReader();r.onerror=rej;
+    r.onload=e=>{
+      const img=new Image();img.onerror=rej;
       img.onload=()=>{
-        const MAX=900;
-        let w=img.width, h=img.height;
-        if(w>h){ if(w>MAX){h=Math.round(h*MAX/w);w=MAX} }
-        else    { if(h>MAX){w=Math.round(w*MAX/h);h=MAX} }
-        const cv=document.createElement('canvas');
-        cv.width=w; cv.height=h;
+        const MAX=900;let w=img.width,h=img.height;
+        if(w>h){if(w>MAX){h=Math.round(h*MAX/w);w=MAX}}
+        else{if(h>MAX){w=Math.round(w*MAX/h);h=MAX}}
+        const cv=document.createElement('canvas');cv.width=w;cv.height=h;
         cv.getContext('2d').drawImage(img,0,0,w,h);
-        resolve(cv.toDataURL('image/jpeg',0.65));
-      };
-      img.src=e.target.result;
-    };
-    reader.readAsDataURL(file);
+        res(cv.toDataURL('image/jpeg',.65));
+      };img.src=e.target.result;
+    };r.readAsDataURL(file);
   });
 }
 
-/* ═══════════════════════════════════════════
-   PAYMENT  (100 % free — Firestore only)
-═══════════════════════════════════════════ */
 async function submitPayment({nm,ph,method,type,tplId,file}){
   try{
-    toast('Compressing screenshot…','i');
+    toast(t('compressing'),'i');
     const b64=await compressImage(file);
-
-    // Firestore doc limit is ~1 MB; typical compressed screenshot ≈ 150-400 KB
-    if(b64.length>950000){
-      toast('Screenshot is too large even after compression. Please crop/resize it first.','e');
-      return null;
-    }
-
+    if(b64.length>950000){toast(t('tooLarge'),'e');return null}
     const oid=db.collection('orders').doc().id;
-    const od={
-      id:oid, userId:S.user.uid, userEmail:S.user.email,
-      userName:nm, phone:ph, paymentMethod:method,
-      type, templateId:tplId||null,
-      screenshotBase64: b64,          // stored directly in Firestore ✅ free
-      status:'pending',
+    await db.collection('orders').doc(oid).set({
+      id:oid,userId:S.user.uid,userEmail:S.user.email,userName:nm,phone:ph,
+      paymentMethod:method,type,templateId:tplId||null,
+      screenshotBase64:b64,status:'pending',
       amount:type==='template'?TPL_PRICE:XTRA_PRICE,
       createdAt:firebase.firestore.FieldValue.serverTimestamp()
-    };
-    await db.collection('orders').doc(oid).set(od);
-
-    const typeText=type==='template'?`Template Unlock (${tplId})`:'Extra Profile Slot';
-    const msg=encodeURIComponent(
-      `🟣 *New Profilo Payment*\n\n`+
-      `👤 Name: ${nm}\n📧 Email: ${S.user.email}\n📱 Phone: ${ph}\n`+
-      `💰 For: ${typeText}\n💳 Method: ${method.toUpperCase()}\n`+
-      `🆔 Order: ${oid}\n\nScreenshot saved. Please check admin panel & approve.`
-    );
+    });
+    const typeText=type==='template'?`Template (${tplId})`:'Extra Profile Slot';
+    const msg=encodeURIComponent(`🟣 *New Profilo Payment*\n\n👤 ${nm}\n📧 ${S.user.email}\n📱 ${ph}\n💰 ${typeText}\n💳 ${method.toUpperCase()}\n🆔 ${oid}\n\nPlease check admin panel.`);
     window.open(`https://wa.me/${ADMIN_WA}?text=${msg}`,'_blank');
-    toast("Submitted! We'll review shortly 📱",'s');
-    return oid;
-  } catch(e){
-    console.error(e);
-    toast('Submission failed. Try again.','e');
-    return null;
-  }
+    toast(t('submitted'),'s');return oid;
+  }catch(e){console.error(e);toast('Submission failed.','e');return null}
 }
 
-/* ═══════════════════════════════════════════
+/* ══════════════════════════════════════
    QR CODE
-═══════════════════════════════════════════ */
+══════════════════════════════════════ */
 function showQR(username){
-  const url=`${window.location.origin}${window.location.pathname}#/p/${username}`;
-  modal(`
-    <div class="qr-wrap">
-      <button class="mcl" onclick="closeMdl()"><i class="fas fa-times"></i></button>
-      <div class="mttl">📱 Your QR Code</div>
-      <div id="qr-cv"></div>
-      <div class="qr-url">${url}</div>
-      <div class="qr-acts">
-        <button class="btn btn-p flex-1" onclick="dlQR('${username}')"><i class="fas fa-download"></i> Download</button>
-        <button class="btn btn-s" onclick="cpLink('${url}')"><i class="fas fa-copy"></i> Copy</button>
-      </div>
+  const url=`${location.origin}${location.pathname}#/p/${username}`;
+  modal(`<div class="qr-wrap">
+    <button class="mcl" onclick="closeMdl()"><i class="fas fa-times"></i></button>
+    <div class="mttl">📱 ${t('qrCode')}</div>
+    <div id="qr-cv"></div>
+    <div class="qr-url">${url}</div>
+    <div class="qr-acts">
+      <button class="btn btn-p flex-1" onclick="dlQR('${username}')"><i class="fas fa-download"></i> ${t('download')}</button>
+      <button class="btn btn-s" onclick="cpLink('${url}')"><i class="fas fa-copy"></i> ${t('copy')}</button>
     </div>
-  `);
+  </div>`);
   setTimeout(()=>{
     const el=document.getElementById('qr-cv');
-    if(el){ el.innerHTML='';
-      new QRCode(el,{text:url,width:190,height:190,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.H});
-    }
+    if(el){el.innerHTML='';new QRCode(el,{text:url,width:188,height:188,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.H})}
   },120);
 }
-
 function dlQR(username){
   const cvs=document.querySelector('#qr-cv canvas');
-  if(!cvs){ toast('QR not ready yet.','e'); return }
-  const sz=600;
-  const off=document.createElement('canvas');
-  off.width=sz; off.height=sz;
+  if(!cvs){toast('QR not ready.','e');return}
+  const sz=600,off=document.createElement('canvas');off.width=sz;off.height=sz;
   const ctx=off.getContext('2d');
-  ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,sz,sz);
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,sz,sz);
   ctx.drawImage(cvs,50,50,sz-100,sz-100);
-  // add label
-  ctx.fillStyle='#555'; ctx.font='bold 22px Inter,sans-serif'; ctx.textAlign='center';
-  ctx.fillText('@'+username,sz/2,sz-18);
-  const a=document.createElement('a');
-  a.download=`profilo-${username}-qr.png`;
-  a.href=off.toDataURL('image/png'); a.click();
-  toast('QR downloaded! 📥','s');
+  ctx.fillStyle='#555';ctx.font='bold 20px Inter,sans-serif';ctx.textAlign='center';
+  ctx.fillText('@'+username,sz/2,sz-16);
+  const a=document.createElement('a');a.download=`profilo-${username}-qr.png`;a.href=off.toDataURL('image/png');a.click();
+  toast(t('qrDl'),'s');
 }
-
 function cpLink(url){
-  navigator.clipboard.writeText(url)
-    .then(()=>toast('Link copied! 🔗','s'))
-    .catch(()=>toast('Copy failed – try manually.','e'));
+  navigator.clipboard.writeText(url).then(()=>toast(t('linkCopied'),'s')).catch(()=>toast('Copy failed.','e'));
 }
 
-/* ═══════════════════════════════════════════
-   MODAL
-═══════════════════════════════════════════ */
+/* ══════════════════════════════════════
+   MODAL + TOAST
+══════════════════════════════════════ */
 let _mdl=null;
-function modal(html){
-  closeMdl();
-  _mdl=document.createElement('div');
-  _mdl.className='mbk';
-  _mdl.innerHTML=`<div class="mbox">${html}</div>`;
-  _mdl.addEventListener('click',e=>{if(e.target===_mdl)closeMdl()});
-  document.body.appendChild(_mdl);
-}
-function closeMdl(){ if(_mdl){_mdl.remove();_mdl=null} }
-
-/* ═══════════════════════════════════════════
-   TOAST
-═══════════════════════════════════════════ */
+function modal(html){closeMdl();_mdl=document.createElement('div');_mdl.className='mbk';_mdl.innerHTML=`<div class="mbox">${html}</div>`;_mdl.addEventListener('click',e=>{if(e.target===_mdl)closeMdl()});document.body.appendChild(_mdl)}
+function closeMdl(){if(_mdl){_mdl.remove();_mdl=null}}
+function viewImg(src){modal(`<button class="mcl" onclick="closeMdl()"><i class="fas fa-times"></i></button><div class="mttl">${t('payScreen')}</div><img src="${src}" style="width:100%;border-radius:var(--radius);margin-top:4px"/>`)}
 function toast(msg,type='i'){
-  const ic={'s':'fa-circle-check','e':'fa-circle-xmark','i':'fa-circle-info','w':'fa-triangle-exclamation'};
-  const el=document.createElement('div');
-  el.className=`toast toast-${type}`;
+  const ic={s:'fa-circle-check',e:'fa-circle-xmark',i:'fa-circle-info',w:'fa-triangle-exclamation'};
+  const el=document.createElement('div');el.className=`toast toast-${type}`;
   el.innerHTML=`<i class="fas ${ic[type]} tic"></i><span>${msg}</span>`;
   document.getElementById('tc').appendChild(el);
-  setTimeout(()=>{el.classList.add('rem');setTimeout(()=>el.remove(),240)},3600);
+  setTimeout(()=>{el.classList.add('rem');setTimeout(()=>el.remove(),220)},3600);
 }
 
-/* ═══════════════════════════════════════════
+/* ══════════════════════════════════════
    UTILS
-═══════════════════════════════════════════ */
+══════════════════════════════════════ */
 const ini=n=>(n||'').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)||'?';
-const getTpl=id=>TPLS.find(t=>t.id===id)||TPLS[0];
-function isUnlocked(id){
-  const t=getTpl(id); if(t.free) return true;
-  return (S.ud?.unlockedTemplates||[]).includes(id);
-}
-const validUN=un=>/^[a-z0-9_.\-]{3,30}$/.test(un);
+const getTpl=id=>TPLS.find(x=>x.id===id)||TPLS[0];
+const isUnlocked=id=>{const tp=getTpl(id);return tp.free||(S.ud?.unlockedTemplates||[]).includes(id)};
+const validUN=u=>/^[a-z0-9_.\-]{3,30}$/.test(u);
+const v=id=>(document.getElementById(id)?.value||'').trim();
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
-/* ═══════════════════════════════════════════
-   MAIN RENDER
-═══════════════════════════════════════════ */
+/* ══════════════════════════════════════
+   RENDER ROUTER
+══════════════════════════════════════ */
 function render(){
-  if(S.loading){
-    document.getElementById('app').innerHTML='<div class="pg-ld"><div class="spin"></div><span>Loading…</span></div>';
-    return;
-  }
-  if(route==='p'){ renderPub(param); return }
-  if(!S.user){ renderLand(); return }
+  if(S.loading){document.getElementById('app').innerHTML=`<div class="pg-ld"><div class="spin"></div><span>${t('loading')}</span></div>`;return}
+  if(route==='p'){renderPub(param);return}
+  if(!S.user){renderLand();return}
   switch(route){
-    case 'dashboard': renderDash(); break;
-    case 'create':    renderCreate(); break;
-    case 'edit':      renderEdit(param); break;
-    case 'payment':   renderPay(param, param2); break;
-    case 'admin':     S.ud?.isAdmin ? renderAdmin() : go('dashboard'); break;
-    default:          renderDash();
+    case 'dashboard':renderDash();break;
+    case 'create':   renderCreate();break;
+    case 'edit':     renderEdit(param);break;
+    case 'payment':  renderPay(param,param2);break;
+    case 'admin':    S.ud?.isAdmin?renderAdmin():go('dashboard');break;
+    default:         renderDash();
   }
 }
 
-/* ═══════════════════════════════════════════
+/* ══════════════════════════════════════
    NAVBAR
-═══════════════════════════════════════════ */
+══════════════════════════════════════ */
 function navbar(){
-  const init=ini(S.user?.displayName||S.user?.email);
   return `<nav class="nav">
-    <span class="nav-logo" onclick="go('dashboard')">Profilo</span>
+    <span class="nav-logo" onclick="go('dashboard')">${t('appName')}</span>
     <div class="nav-r">
+      <button class="lang-btn" onclick="toggleLang()">${lang==='en'?'کوردی':'EN'}</button>
       ${S.ud?.isAdmin?`<button class="btn btn-g btn-sm" onclick="go('admin')">⚙️ Admin</button>`:''}
-      <div class="nav-av" onclick="userMenu()">${init}</div>
+      <div class="nav-av" onclick="userMenu()">${ini(S.user?.displayName||S.user?.email)}</div>
     </div>
   </nav>`;
 }
 function userMenu(){
-  modal(`
-    <button class="mcl" onclick="closeMdl()"><i class="fas fa-times"></i></button>
-    <div class="mttl">My Account</div>
+  modal(`<button class="mcl" onclick="closeMdl()"><i class="fas fa-times"></i></button>
+    <div class="mttl">${t('myAccount')}</div>
     <p class="ts tm mb4">${S.user?.email}</p>
-    <div style="display:flex;flex-direction:column;gap:9px">
-      <button class="btn btn-s btn-blk" onclick="closeMdl();go('dashboard')"><i class="fas fa-home"></i> Dashboard</button>
-      <button class="btn btn-d btn-blk" onclick="closeMdl();doLogout()"><i class="fas fa-right-from-bracket"></i> Logout</button>
-    </div>
-  `);
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn btn-s btn-blk" onclick="closeMdl();go('dashboard')"><i class="fas fa-home"></i> ${t('dashboard')}</button>
+      <button class="btn btn-d btn-blk" onclick="closeMdl();doLogout()"><i class="fas fa-right-from-bracket"></i> ${t('logout')}</button>
+    </div>`);
 }
 
-/* ═══════════════════════════════════════════
+/* ══════════════════════════════════════
    LANDING
-═══════════════════════════════════════════ */
+══════════════════════════════════════ */
 function renderLand(){
   document.getElementById('app').innerHTML=`
   <div class="land">
-    <div class="land-logo-wrap">
-      <span class="land-logo">Profilo</span>
-      <p class="land-tag">Your digital identity in one link ✨</p>
-    </div>
+    <span class="land-logo">${t('appName')}</span>
+    <p class="land-tag">${t('tagline')}</p>
     <div class="auth-card">
       <div class="tabs">
-        <button class="tbn on" id="t-li" onclick="swTab('li')">Login</button>
-        <button class="tbn" id="t-re" onclick="swTab('re')">Register</button>
+        <button class="tbn on" id="t-li" onclick="swTab('li')">${t('login')}</button>
+        <button class="tbn" id="t-re" onclick="swTab('re')">${t('register')}</button>
       </div>
       <div id="f-li">
-        <div class="fg"><label class="lbl">Email</label>
+        <div class="fg"><label class="lbl">${t('email')}</label>
           <div class="ig"><i class="fas fa-envelope ic"></i><input class="fi" type="email" id="l-em" placeholder="you@example.com" autocomplete="email"/></div></div>
-        <div class="fg"><label class="lbl">Password</label>
+        <div class="fg"><label class="lbl">${t('password')}</label>
           <div class="ig"><i class="fas fa-lock ic"></i><input class="fi" type="password" id="l-pw" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')hLogin()"/></div></div>
-        <button class="btn btn-p btn-blk btn-lg mt4" onclick="hLogin()"><i class="fas fa-right-to-bracket"></i> Login</button>
-        <div class="or-div">or</div>
-        <button class="btn btn-google btn-blk btn-lg" onclick="doGoogle()">
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google"/>
-          Continue with Google
+        <button class="btn btn-p btn-blk btn-lg mt4" onclick="hLogin()"><i class="fas fa-right-to-bracket"></i> ${t('login')}</button>
+        <div class="or-div">${t('or')}</div>
+        <button class="btn btn-google btn-blk" onclick="doGoogle()">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"/>
+          ${t('continueGoogle')}
         </button>
       </div>
       <div id="f-re" class="hid">
-        <div class="fg"><label class="lbl">Full Name</label>
-          <div class="ig"><i class="fas fa-user ic"></i><input class="fi" type="text" id="r-nm" placeholder="Your Name" autocomplete="name"/></div></div>
-        <div class="fg"><label class="lbl">Email</label>
+        <div class="fg"><label class="lbl">${t('fullName')}</label>
+          <div class="ig"><i class="fas fa-user ic"></i><input class="fi" type="text" id="r-nm" placeholder="${lang==='ku'?'ناوی تەواو':'Your Name'}" autocomplete="name"/></div></div>
+        <div class="fg"><label class="lbl">${t('email')}</label>
           <div class="ig"><i class="fas fa-envelope ic"></i><input class="fi" type="email" id="r-em" placeholder="you@example.com" autocomplete="email"/></div></div>
-        <div class="fg"><label class="lbl">Password</label>
-          <div class="ig"><i class="fas fa-lock ic"></i><input class="fi" type="password" id="r-pw" placeholder="Min. 6 characters" autocomplete="new-password" onkeydown="if(event.key==='Enter')hReg()"/></div></div>
-        <button class="btn btn-p btn-blk btn-lg mt4" onclick="hReg()"><i class="fas fa-user-plus"></i> Create Account</button>
-        <div class="or-div">or</div>
-        <button class="btn btn-google btn-blk btn-lg" onclick="doGoogle()">
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google"/>
-          Sign up with Google
+        <div class="fg"><label class="lbl">${t('password')}</label>
+          <div class="ig"><i class="fas fa-lock ic"></i><input class="fi" type="password" id="r-pw" placeholder="${lang==='ku'?'کەمترین ٦ پیت':'Min. 6 characters'}" autocomplete="new-password" onkeydown="if(event.key==='Enter')hReg()"/></div></div>
+        <button class="btn btn-p btn-blk btn-lg mt4" onclick="hReg()"><i class="fas fa-user-plus"></i> ${t('createAccount')}</button>
+        <div class="or-div">${t('or')}</div>
+        <button class="btn btn-google btn-blk" onclick="doGoogle()">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"/>
+          ${t('signupGoogle')}
         </button>
       </div>
     </div>
-    <p class="ts tm tc" style="margin-top:22px">🔒 Secure · Mobile-friendly · Free to start</p>
+    <p class="ts tm tc mt3">${t('secure')}</p>
   </div>`;
 }
-function swTab(t){
+function swTab(tb){
   ['li','re'].forEach(x=>{
-    document.getElementById('t-'+x).classList.toggle('on',x===t);
-    document.getElementById('f-'+x).classList.toggle('hid',x!==t);
+    document.getElementById('t-'+x).classList.toggle('on',x===tb);
+    document.getElementById('f-'+x).classList.toggle('hid',x!==tb);
   });
 }
 function hLogin(){
-  const em=document.getElementById('l-em').value.trim();
-  const pw=document.getElementById('l-pw').value;
-  if(!em||!pw){toast('Fill all fields.','w');return}
+  const em=v('l-em'),pw=document.getElementById('l-pw').value;
+  if(!em||!pw){toast(t('fillAll'),'w');return}
   doLogin(em,pw);
 }
 function hReg(){
-  const nm=document.getElementById('r-nm').value.trim();
-  const em=document.getElementById('r-em').value.trim();
-  const pw=document.getElementById('r-pw').value;
-  if(!nm||!em||!pw){toast('Fill all fields.','w');return}
-  if(pw.length<6){toast('Password: min 6 characters.','w');return}
+  const nm=v('r-nm'),em=v('r-em'),pw=document.getElementById('r-pw').value;
+  if(!nm||!em||!pw){toast(t('fillAll'),'w');return}
+  if(pw.length<6){toast(t('pwMin'),'w');return}
   doReg(nm,em,pw);
 }
 
-/* ═══════════════════════════════════════════
+/* ══════════════════════════════════════
    DASHBOARD
-═══════════════════════════════════════════ */
+══════════════════════════════════════ */
 async function renderDash(){
   const app=document.getElementById('app');
-  app.innerHTML=navbar()+`
-  <div class="pg">
-    <div class="wrap">
-      <div class="dash-hd">
-        <div class="dash-hi">Hello, ${S.user?.displayName?.split(' ')[0]||'there'} 👋</div>
-        <div class="dash-sub">Manage your Profilo pages</div>
-      </div>
-      <div id="ps"><div class="pg-ld" style="min-height:180px"><div class="spin"></div></div></div>
-    </div>
-  </div>`;
+  app.innerHTML=navbar()+`<div class="pg"><div class="wrap">
+    <div class="dash-hd"><div class="dash-hi">${t('hello')}, ${S.user?.displayName?.split(' ')[0]||''} 👋</div>
+    <div class="dash-sub">${t('managePages')}</div></div>
+    <div id="ps"><div class="pg-ld" style="min-height:160px"><div class="spin"></div></div></div>
+  </div></div>`;
   try{
     const profiles=await getUserProfiles(S.user.uid);
-    const ud=S.ud||{};
-    const max=ud.extraProfilesPaid?FREE_LIMIT+2:FREE_LIMIT;
-    const cnt=profiles.length;
-    const pct=Math.min(100,(cnt/max)*100);
-    const canCr=cnt<max;
+    const ud=S.ud||{}, max=ud.extraProfilesPaid?FREE_LIMIT+2:FREE_LIMIT;
+    const cnt=profiles.length, pct=Math.min(100,(cnt/max)*100);
     let pHtml='';
     if(!cnt){
-      pHtml=`<div class="empty">
-        <div class="empty-e">🔮</div>
-        <div class="empty-t">No profiles yet</div>
-        <div class="empty-s">Create your first digital profile and share all your links in one place.</div>
-        <button class="btn btn-p btn-lg" onclick="go('create')"><i class="fas fa-plus"></i> Create Profile</button>
-      </div>`;
-    } else {
+      pHtml=`<div class="empty"><div class="empty-e">🔮</div><div class="empty-t">${t('noProfiles')}</div>
+        <div class="empty-s">${t('noProfilesSub')}</div>
+        <button class="btn btn-p btn-lg" onclick="go('create')"><i class="fas fa-plus"></i> ${t('createFirst')}</button></div>`;
+    }else{
       pHtml=profiles.map(p=>{
         const tpl=getTpl(p.template);
         const pUrl=`${location.origin}${location.pathname}#/p/${p.username}`;
         return `<div class="pc">
           <div class="pc-top">
             <div class="pc-av">${ini(p.displayName||p.username)}</div>
-            <div class="pc-inf">
-              <div class="pc-name">${p.displayName||p.username}</div>
-              <div class="pc-usr">@${p.username}</div>
-            </div>
+            <div class="pc-inf"><div class="pc-name">${esc(p.displayName||p.username)}</div>
+              <div class="pc-usr">@${p.username}</div></div>
             <span class="pc-tpl">${tpl.em} ${tpl.nm}</span>
           </div>
           <div class="pc-acts">
-            <button class="btn btn-s btn-sm" onclick="go('edit/${p.id}')"><i class="fas fa-pen"></i> Edit</button>
+            <button class="btn btn-s btn-sm" onclick="go('edit/${p.id}')"><i class="fas fa-pen"></i> ${t('edit')}</button>
             <button class="btn btn-g btn-sm" onclick="showQR('${p.username}')"><i class="fas fa-qrcode"></i> QR</button>
-            <button class="btn btn-g btn-sm" onclick="cpLink('${pUrl}')"><i class="fas fa-link"></i> Link</button>
+            <button class="btn btn-g btn-sm" onclick="cpLink('${pUrl}')"><i class="fas fa-link"></i> ${t('link')}</button>
             <button class="btn btn-g btn-sm" onclick="window.open('#/p/${p.username}','_blank')"><i class="fas fa-eye"></i></button>
             <button class="btn btn-d btn-sm" onclick="cfDel('${p.id}','${p.username}')"><i class="fas fa-trash"></i></button>
           </div>
@@ -907,218 +885,201 @@ async function renderDash(){
     }
     document.getElementById('ps').innerHTML=`
       <div class="lim">
-        <div class="lim-row"><span class="ts"><i class="fas fa-layer-group"></i> Profiles used</span><span class="ts fw">${cnt} / ${max}</span></div>
+        <div class="lim-row"><span>${t('profilesUsed')}</span><span class="fw">${cnt} / ${max}</span></div>
         <div class="lim-bar"><div class="lim-fill" style="width:${pct}%"></div></div>
-        ${!ud.extraProfilesPaid&&cnt>=FREE_LIMIT?`<p class="ts tm mt2">Need more? <a href="#" onclick="go('payment/extra-profile');return false" style="color:var(--primary)">Unlock extra slots</a></p>`:''}
+        ${!ud.extraProfilesPaid&&cnt>=FREE_LIMIT?`<p class="ts tm mt3">${t('needMore')} <a href="#" onclick="go('payment/extra-profile');return false" style="color:var(--primary)">${t('unlockExtra')}</a></p>`:''}
       </div>
       ${pHtml}
-      ${canCr?`<button class="btn btn-p btn-blk btn-lg" onclick="go('create')" style="margin-top:8px"><i class="fas fa-plus"></i> Create New Profile</button>`
-            :`<button class="btn btn-g btn-blk" onclick="go('payment/extra-profile')" style="margin-top:8px"><i class="fas fa-lock"></i> Unlock More Profile Slots</button>`}
-      <br><br>
-    `;
-  } catch(e){ console.error(e);
-    document.getElementById('ps').innerHTML=`<div class="empty"><div class="empty-e">❌</div><div class="empty-t">Couldn't load profiles</div><button class="btn btn-s" onclick="renderDash()">Retry</button></div>`;
+      ${cnt<max
+        ?`<button class="btn btn-p btn-blk btn-lg" onclick="go('create')" style="margin-top:8px"><i class="fas fa-plus"></i> ${t('createNew')}</button>`
+        :`<button class="btn btn-g btn-blk" onclick="go('payment/extra-profile')" style="margin-top:8px"><i class="fas fa-lock"></i> ${t('unlockMoreBtn')}</button>`}
+      <br><br>`;
+  }catch(e){
+    console.error(e);
+    document.getElementById('ps').innerHTML=`<div class="empty"><div class="empty-e">❌</div><div class="empty-t">${t('noNet')}</div><button class="btn btn-s" onclick="renderDash()">Retry</button></div>`;
   }
 }
 function cfDel(pid,un){
   modal(`<button class="mcl" onclick="closeMdl()"><i class="fas fa-times"></i></button>
-    <div class="mttl">Delete Profile?</div>
-    <p class="ts tm mb4">Delete <strong>@${un}</strong>? This cannot be undone.</p>
-    <div style="display:flex;gap:9px">
-      <button class="btn btn-d flex-1" onclick="closeMdl();xDel('${pid}')"><i class="fas fa-trash"></i> Delete</button>
-      <button class="btn btn-g flex-1" onclick="closeMdl()">Cancel</button>
+    <div class="mttl">${t('delProfile')}</div>
+    <p class="ts tm mb4">${t('delConfirm')}</p>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-d flex-1" onclick="closeMdl();xDel('${pid}')"><i class="fas fa-trash"></i> ${t('confirmDel')}</button>
+      <button class="btn btn-g flex-1" onclick="closeMdl()">${t('cancel')}</button>
     </div>`);
 }
-async function xDel(pid){ await delProfile(pid); renderDash() }
+async function xDel(pid){await delProfile(pid);renderDash()}
 
-/* ═══════════════════════════════════════════
+/* ══════════════════════════════════════
    CREATE PROFILE
-═══════════════════════════════════════════ */
-function renderCreate(){
-  selTpl='classic-dark';
-  document.getElementById('app').innerHTML=navbar()+`
-  <div class="cr-pg">
-    <div class="wrap">
-      <div class="pg-hd">
-        <div class="pg-back" onclick="go('dashboard')"><i class="fas fa-arrow-left"></i> Back</div>
-        <div class="pg-h1">Create Profile</div>
-        <div class="pg-hint">Fill in your details and pick a template</div>
-      </div><br>
-      <div class="fg"><label class="lbl">Username *</label>
-        <div class="ig"><i class="fas fa-at ic"></i>
-          <input class="fi" type="text" id="c-un" placeholder="yourname" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9_.\-]/g,'')"/></div>
-        <div class="fhint">3–30 chars · letters, numbers, _ . -</div></div>
-      <div class="fg"><label class="lbl">Display Name *</label>
-        <div class="ig"><i class="fas fa-user ic"></i><input class="fi" type="text" id="c-dn" placeholder="Your Full Name"/></div></div>
-      <div class="fg"><label class="lbl">Bio <span class="tm">(optional)</span></label>
-        <textarea class="fi" id="c-bio" placeholder="Tell the world about yourself…" maxlength="200"></textarea></div>
-      <div class="sep"><span class="sep-lbl">Social Links (all optional)</span></div>
-      ${socialFields('c')}
-      <div class="sep"><span class="sep-lbl">Choose Template</span></div>
-      <div class="tpl-grid" id="tg">${tplGrid()}</div><br>
-      <button class="btn btn-p btn-blk btn-lg" id="cr-btn" onclick="hCreate()"><i class="fas fa-rocket"></i> Create Profile</button>
-      <br><br>
-    </div>
-  </div>`;
-}
-
-function socialFields(pfx){
-  return `
-  <div class="fg"><label class="lbl"><i class="fab fa-snapchat" style="color:#FFFC00"></i> Snapchat</label>
-    <div class="ig"><i class="fas fa-at ic"></i><input class="fi" type="text" id="${pfx}-sc" placeholder="username"/></div></div>
-  <div class="fg"><label class="lbl"><i class="fab fa-tiktok"></i> TikTok</label>
-    <div class="ig"><i class="fas fa-at ic"></i><input class="fi" type="text" id="${pfx}-tk" placeholder="username"/></div></div>
-  <div class="fg"><label class="lbl"><i class="fab fa-facebook" style="color:#1877F2"></i> Facebook</label>
-    <div class="ig"><i class="fas fa-link ic"></i><input class="fi" type="text" id="${pfx}-fb" placeholder="username or page"/></div></div>
-  <div class="fg"><label class="lbl"><i class="fab fa-telegram" style="color:#0088CC"></i> Telegram</label>
-    <div class="ig"><i class="fas fa-at ic"></i><input class="fi" type="text" id="${pfx}-tg" placeholder="username"/></div></div>
-  <div class="fg"><label class="lbl"><i class="fab fa-instagram" style="color:#E4405F"></i> Instagram</label>
-    <div class="ig"><i class="fas fa-at ic"></i><input class="fi" type="text" id="${pfx}-ig" placeholder="username"/></div></div>`;
+══════════════════════════════════════ */
+function socialFieldsHTML(pfx,vals={}){
+  const socs=[
+    {id:'sc',lbl:'Snapchat',icon:'fa-snapchat',clr:'#FFFC00',key:'snapchat'},
+    {id:'tk',lbl:'TikTok',icon:'fa-tiktok',clr:'',key:'tiktok'},
+    {id:'fb',lbl:'Facebook',icon:'fa-facebook',clr:'#1877F2',key:'facebook'},
+    {id:'tg',lbl:'Telegram',icon:'fa-telegram',clr:'#0088CC',key:'telegram'},
+    {id:'ig',lbl:'Instagram',icon:'fa-instagram',clr:'#E4405F',key:'instagram'},
+  ];
+  return socs.map(s=>`<div class="fg"><label class="lbl">
+    <i class="fab ${s.icon}"${s.clr?` style="color:${s.clr}"`:''} ></i> ${t(s.key)}
+    </label><div class="ig"><i class="fas fa-at ic"></i>
+    <input class="fi" type="text" id="${pfx}-${s.id}" value="${esc(vals[s.key]||'')}" placeholder="${lang==='ku'?'ناوی بەکارهێنەر':'username'}"/>
+    </div></div>`).join('');
 }
 
 function tplGrid(){
-  return TPLS.map(t=>{
-    const ul=isUnlocked(t.id), sel=selTpl===t.id;
-    return `<div class="tpl-card${sel?' sel':''}${!ul?' lkd':''}" id="tc-${t.id}"
-      onclick="${ul?`pickTpl('${t.id}')`:`pUnlock('${t.id}')`}">
-      <div class="tpl-prev" style="background:${t.bg}">
-        <span>${t.em}</span>
-        ${!ul?`<div class="lk-ov"><div class="lk-btn" onclick="event.stopPropagation();pUnlock('${t.id}')"><i class="fas fa-lock"></i></div></div>`:''}
+  return TPLS.map(tp=>{
+    const ul=isUnlocked(tp.id),sel=selTpl===tp.id;
+    return `<div class="tpl-card${sel?' sel':''}${!ul?' lkd':''}" id="tc-${tp.id}"
+      onclick="${ul?`pickTpl('${tp.id}')`:`pUnlock('${tp.id}')`}">
+      <div class="tpl-prev" style="background-image:url('${tp.img}'),linear-gradient(135deg,#222,#444)">
+        <span>${tp.em}</span>
+        ${!ul?`<div class="lk-ov"><div class="lk-ic" onclick="event.stopPropagation();pUnlock('${tp.id}')"><i class="fas fa-lock"></i></div></div>`:''}
       </div>
       <div class="tpl-meta">
-        <div class="tpl-nm">${t.nm}</div>
-        <span class="bdg ${t.free?'bdg-f':ul?'bdg-u':'bdg-p'}">${t.free?'✓ Free':ul?'✓ Unlocked':'🔒 '+TPL_PRICE}</span>
+        <div class="tpl-nm">${tp.nm}</div>
+        <span class="bdg ${tp.free?'bdg-f':ul?'bdg-u':'bdg-p'}">${tp.free?'✓ '+t('free'):ul?'✓ '+t('unlocked'):'🔒 '+TPL_PRICE}</span>
       </div>
     </div>`;
   }).join('');
 }
-function pickTpl(id){
-  selTpl=id;
-  document.querySelectorAll('.tpl-card').forEach(el=>el.classList.toggle('sel',el.id===`tc-${id}`));
-}
+function pickTpl(id){selTpl=id;document.querySelectorAll('.tpl-card').forEach(el=>el.classList.toggle('sel',el.id===`tc-${id}`))}
 function pUnlock(id){
-  const t=getTpl(id);
+  const tp=getTpl(id);
   modal(`<button class="mcl" onclick="closeMdl()"><i class="fas fa-times"></i></button>
-    <div class="tc mb4"><div style="font-size:3rem;margin-bottom:8px">${t.em}</div>
-      <div class="mttl" style="margin-bottom:4px">Unlock ${t.nm}</div>
-      <p class="ts tm">Premium template</p></div>
-    <div class="pay-box tc mb4"><div class="pay-ttl">Price</div><div class="pay-num">${TPL_PRICE}</div></div>
-    <p class="ts tm mb4">Pay via FastPay or FIB, upload your receipt to unlock.</p>
+    <div class="tc mb4"><div style="font-size:2.6rem;margin-bottom:8px">${tp.em}</div>
+    <div class="mttl" style="margin-bottom:3px">${t('unlockTemplate')}: ${tp.nm}</div>
+    <p class="ts tm">${t('premiumTemplate')}</p></div>
+    <div class="pay-box tc mb4"><div class="pay-ttl">${t('price')}</div><div class="pay-num">${TPL_PRICE}</div></div>
     <button class="btn btn-p btn-blk" onclick="closeMdl();go('payment/template/${id}')">
-      <i class="fas fa-unlock"></i> Pay & Unlock</button>`);
+      <i class="fas fa-unlock"></i> ${t('payUnlock')}</button>`);
+}
+
+function renderCreate(){
+  selTpl='classic-dark';
+  document.getElementById('app').innerHTML=navbar()+`
+  <div class="cr-pg"><div class="wrap">
+    <div class="pg-hd">
+      <button class="pg-back" onclick="go('dashboard')"><i class="fas fa-arrow-left"></i> ${t('back')}</button>
+      <div class="pg-h1">${t('createProfile')}</div>
+      <div class="pg-hint">${t('fillDetails')}</div>
+    </div><br>
+    <div class="fg"><label class="lbl">${t('username')} *</label>
+      <div class="ig"><i class="fas fa-at ic"></i>
+        <input class="fi" type="text" id="c-un" placeholder="${lang==='ku'?'ناوی بەکارهێنەر':'yourname'}" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9_.\-]/g,'')"/></div>
+      <div class="fhint">${t('usernameHint')}</div></div>
+    <div class="fg"><label class="lbl">${t('displayName')} *</label>
+      <div class="ig"><i class="fas fa-user ic"></i>
+        <input class="fi" type="text" id="c-dn" placeholder="${lang==='ku'?'ناوی تەواو':'Your Full Name'}"/></div></div>
+    <div class="fg"><label class="lbl">${t('bioOpt')}</label>
+      <textarea class="fi" id="c-bio" placeholder="${lang==='ku'?'دەربارەی خۆت بنووسە…':'Tell the world about yourself…'}" maxlength="200"></textarea></div>
+    <div class="sep"><span class="sep-lbl">${t('socialLinks')}</span></div>
+    ${socialFieldsHTML('c')}
+    <div class="sep"><span class="sep-lbl">${t('chooseTemplate')}</span></div>
+    <div class="tpl-grid" id="tg">${tplGrid()}</div><br>
+    <button class="btn btn-p btn-blk btn-lg" id="cr-btn" onclick="hCreate()">
+      <i class="fas fa-rocket"></i> ${t('createBtn')}</button>
+    <br><br>
+  </div></div>`;
 }
 
 async function hCreate(){
-  const un=v('c-un'), dn=v('c-dn'), bio=v('c-bio');
-  if(!un){toast('Username required.','w');return}
-  if(!validUN(un)){toast('Invalid username: 3–30 chars, a-z 0-9 _ . -','w');return}
-  if(!dn){toast('Display name required.','w');return}
-  if(!isUnlocked(selTpl)){toast('That template is locked. Unlock it first.','w');return}
+  const un=v('c-un'),dn=v('c-dn'),bio=v('c-bio');
+  if(!un){toast(t('unReq'),'w');return}
+  if(!validUN(un)){toast(t('invalidUn'),'w');return}
+  if(!dn){toast(t('dnReq'),'w');return}
+  if(!isUnlocked(selTpl)){toast(t('tplLocked'),'w');return}
   const btn=document.getElementById('cr-btn');
-  btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Creating…';
-  const pid=await createProfile({
-    username:un,displayName:dn,bio,template:selTpl,
-    snapchat:v('c-sc'),tiktok:v('c-tk'),facebook:v('c-fb'),telegram:v('c-tg'),instagram:v('c-ig')
-  });
-  if(pid){ showQR(un); setTimeout(()=>go('dashboard'),600) }
-  else{ btn.disabled=false; btn.innerHTML='<i class="fas fa-rocket"></i> Create Profile' }
+  btn.disabled=true;btn.innerHTML=`<i class="fas fa-spinner fa-spin"></i> ${lang==='ku'?'دروستدەکرێت…':'Creating…'}`;
+  const pid=await createProfile({username:un,displayName:dn,bio,template:selTpl,
+    snapchat:v('c-sc'),tiktok:v('c-tk'),facebook:v('c-fb'),telegram:v('c-tg'),instagram:v('c-ig')});
+  if(pid){showQR(un);setTimeout(()=>go('dashboard'),600)}
+  else{btn.disabled=false;btn.innerHTML=`<i class="fas fa-rocket"></i> ${t('createBtn')}`}
 }
 
-/* ═══════════════════════════════════════════
+/* ══════════════════════════════════════
    EDIT PROFILE
-═══════════════════════════════════════════ */
+══════════════════════════════════════ */
 async function renderEdit(pid){
-  document.getElementById('app').innerHTML=navbar()+`
-  <div class="cr-pg"><div class="wrap">
-    <div class="pg-hd"><div class="pg-back" onclick="go('dashboard')"><i class="fas fa-arrow-left"></i> Back</div>
-      <div class="pg-h1">Edit Profile</div></div><br>
-    <div class="pg-ld" style="min-height:280px"><div class="spin"></div></div>
+  document.getElementById('app').innerHTML=navbar()+`<div class="cr-pg"><div class="wrap">
+    <div class="pg-hd"><button class="pg-back" onclick="go('dashboard')"><i class="fas fa-arrow-left"></i> ${t('back')}</button>
+    <div class="pg-h1">${t('editProfile')}</div></div><br>
+    <div class="pg-ld" style="min-height:240px"><div class="spin"></div></div>
   </div></div>`;
   try{
     const doc=await db.collection('profiles').doc(pid).get();
-    if(!doc.exists||doc.data().userId!==S.user.uid){ toast('Profile not found.','e'); go('dashboard'); return }
-    const p=doc.data(); selTpl=p.template;
+    if(!doc.exists||doc.data().userId!==S.user.uid){toast('Not found.','e');go('dashboard');return}
+    const p=doc.data();selTpl=p.template;
     document.getElementById('app').innerHTML=navbar()+`
     <div class="cr-pg"><div class="wrap">
-      <div class="pg-hd">
-        <div class="pg-back" onclick="go('dashboard')"><i class="fas fa-arrow-left"></i> Back</div>
-        <div class="pg-h1">Edit Profile</div>
-        <div class="pg-hint">@${p.username}</div>
-      </div><br>
-      <div class="fg"><label class="lbl">Username *</label>
+      <div class="pg-hd"><button class="pg-back" onclick="go('dashboard')"><i class="fas fa-arrow-left"></i> ${t('back')}</button>
+        <div class="pg-h1">${t('editProfile')}</div><div class="pg-hint">@${p.username}</div></div><br>
+      <div class="fg"><label class="lbl">${t('username')} *</label>
         <div class="ig"><i class="fas fa-at ic"></i>
-          <input class="fi" type="text" id="e-un" value="${p.username}" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9_.\-]/g,'')"/></div></div>
-      <div class="fg"><label class="lbl">Display Name *</label>
-        <div class="ig"><i class="fas fa-user ic"></i><input class="fi" type="text" id="e-dn" value="${esc(p.displayName||'')}"/></div></div>
-      <div class="fg"><label class="lbl">Bio</label>
+          <input class="fi" type="text" id="e-un" value="${esc(p.username)}" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9_.\-]/g,'')"/></div></div>
+      <div class="fg"><label class="lbl">${t('displayName')} *</label>
+        <div class="ig"><i class="fas fa-user ic"></i>
+          <input class="fi" type="text" id="e-dn" value="${esc(p.displayName||'')}"/></div></div>
+      <div class="fg"><label class="lbl">${t('bio')}</label>
         <textarea class="fi" id="e-bio" maxlength="200">${esc(p.bio||'')}</textarea></div>
-      <div class="sep"><span class="sep-lbl">Social Links</span></div>
-      <div class="fg"><label class="lbl"><i class="fab fa-snapchat" style="color:#FFFC00"></i> Snapchat</label>
-        <div class="ig"><i class="fas fa-at ic"></i><input class="fi" type="text" id="e-sc" value="${esc(p.snapchat||'')}" placeholder="username"/></div></div>
-      <div class="fg"><label class="lbl"><i class="fab fa-tiktok"></i> TikTok</label>
-        <div class="ig"><i class="fas fa-at ic"></i><input class="fi" type="text" id="e-tk" value="${esc(p.tiktok||'')}" placeholder="username"/></div></div>
-      <div class="fg"><label class="lbl"><i class="fab fa-facebook" style="color:#1877F2"></i> Facebook</label>
-        <div class="ig"><i class="fas fa-link ic"></i><input class="fi" type="text" id="e-fb" value="${esc(p.facebook||'')}" placeholder="username or page"/></div></div>
-      <div class="fg"><label class="lbl"><i class="fab fa-telegram" style="color:#0088CC"></i> Telegram</label>
-        <div class="ig"><i class="fas fa-at ic"></i><input class="fi" type="text" id="e-tg" value="${esc(p.telegram||'')}" placeholder="username"/></div></div>
-      <div class="fg"><label class="lbl"><i class="fab fa-instagram" style="color:#E4405F"></i> Instagram</label>
-        <div class="ig"><i class="fas fa-at ic"></i><input class="fi" type="text" id="e-ig" value="${esc(p.instagram||'')}" placeholder="username"/></div></div>
-      <div class="sep"><span class="sep-lbl">Template</span></div>
+      <div class="sep"><span class="sep-lbl">${t('socialLinks')}</span></div>
+      ${socialFieldsHTML('e',p)}
+      <div class="sep"><span class="sep-lbl">${t('chooseTemplate')}</span></div>
       <div class="tpl-grid" id="tg">${tplGrid()}</div><br>
-      <div style="display:flex;gap:9px">
+      <div style="display:flex;gap:8px">
         <button class="btn btn-p flex-1 btn-lg" id="e-btn" onclick="hUpdate('${pid}','${p.username}')">
-          <i class="fas fa-save"></i> Save Changes</button>
+          <i class="fas fa-save"></i> ${t('saveChanges')}</button>
         <button class="btn btn-g" onclick="showQR('${p.username}')"><i class="fas fa-qrcode"></i></button>
       </div><br><br>
     </div></div>`;
-  } catch(e){ console.error(e); toast('Failed to load.','e'); go('dashboard') }
+  }catch(e){console.error(e);toast('Failed to load.','e');go('dashboard')}
 }
 
 async function hUpdate(pid,oldUN){
-  const un=v('e-un'), dn=v('e-dn');
-  if(!un){toast('Username required.','w');return}
-  if(!validUN(un)){toast('Invalid username format.','w');return}
-  if(!dn){toast('Display name required.','w');return}
-  if(!isUnlocked(selTpl)){toast('That template is locked.','w');return}
+  const un=v('e-un'),dn=v('e-dn');
+  if(!un){toast(t('unReq'),'w');return}
+  if(!validUN(un)){toast(t('invalidUn'),'w');return}
+  if(!dn){toast(t('dnReq'),'w');return}
+  if(!isUnlocked(selTpl)){toast(t('tplLocked'),'w');return}
   const btn=document.getElementById('e-btn');
-  btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Saving…';
-  const ok=await updProfile(pid,{
-    username:un,displayName:dn,bio:v('e-bio'),template:selTpl,
-    snapchat:v('e-sc'),tiktok:v('e-tk'),facebook:v('e-fb'),telegram:v('e-tg'),instagram:v('e-ig')
-  },oldUN);
-  if(ok){ go('dashboard') }
-  else{ btn.disabled=false; btn.innerHTML='<i class="fas fa-save"></i> Save Changes' }
+  btn.disabled=true;btn.innerHTML=`<i class="fas fa-spinner fa-spin"></i> ${lang==='ku'?'پاشەکەوت دەکرێت…':'Saving…'}`;
+  const ok=await updProfile(pid,{username:un,displayName:dn,bio:v('e-bio'),template:selTpl,
+    snapchat:v('e-sc'),tiktok:v('e-tk'),facebook:v('e-fb'),telegram:v('e-tg'),instagram:v('e-ig')},oldUN);
+  if(ok){go('dashboard')}
+  else{btn.disabled=false;btn.innerHTML=`<i class="fas fa-save"></i> ${t('saveChanges')}`}
 }
 
-/* ═══════════════════════════════════════════
+/* ══════════════════════════════════════
    PUBLIC PROFILE
-═══════════════════════════════════════════ */
+══════════════════════════════════════ */
 async function renderPub(username){
   document.getElementById('app').innerHTML='<div class="pg-ld"><div class="spin"></div></div>';
-  if(!username){ notFound(username); return }
+  if(!username){notFound(username);return}
   try{
     const p=await getProfileByUN(username);
-    if(!p){ notFound(username); return }
+    if(!p){notFound(username);return}
     const tpl=getTpl(p.template);
     const init=ini(p.displayName||p.username);
-    const cssVars=Object.entries(tpl.v).map(([k,vl])=>`${k}:${vl}`).join(';');
-    const socials=[
-      p.snapchat&&{url:`https://snapchat.com/add/${p.snapchat}`,    label:'Snapchat',   sub:p.snapchat,  icon:'fab fa-snapchat',ic:'sn-ic'},
-      p.tiktok&&  {url:`https://tiktok.com/@${p.tiktok}`,          label:'TikTok',     sub:p.tiktok,    icon:'fab fa-tiktok', ic:'tk-ic'},
-      p.facebook&& {url:`https://facebook.com/${p.facebook}`,       label:'Facebook',   sub:p.facebook,  icon:'fab fa-facebook',ic:'fb-ic'},
-      p.telegram&& {url:`https://t.me/${p.telegram}`,               label:'Telegram',   sub:p.telegram,  icon:'fab fa-telegram',ic:'tg-ic'},
-      p.instagram&&{url:`https://instagram.com/${p.instagram}`,     label:'Instagram',  sub:p.instagram, icon:'fab fa-instagram',ic:'ig-ic'},
+    const css=Object.entries(tpl.v).map(([k,val])=>`${k}:${val}`).join(';');
+    const socs=[
+      p.snapchat&&{url:`https://snapchat.com/add/${p.snapchat}`,lbl:t('snapchat'),sub:p.snapchat,icon:'fab fa-snapchat',ic:'sn-ic'},
+      p.tiktok&&  {url:`https://tiktok.com/@${p.tiktok}`,     lbl:t('tiktok'),  sub:p.tiktok,  icon:'fab fa-tiktok', ic:'tk-ic'},
+      p.facebook&& {url:`https://facebook.com/${p.facebook}`, lbl:t('facebook'),sub:p.facebook, icon:'fab fa-facebook',ic:'fb-ic'},
+      p.telegram&& {url:`https://t.me/${p.telegram}`,         lbl:t('telegram'),sub:p.telegram, icon:'fab fa-telegram',ic:'tg-ic'},
+      p.instagram&&{url:`https://instagram.com/${p.instagram}`,lbl:t('instagram'),sub:p.instagram,icon:'fab fa-instagram',ic:'ig-ic'},
     ].filter(Boolean);
-    const links=socials.length
-      ? socials.map(s=>`<a href="${s.url}" target="_blank" rel="noopener" class="pub-lnk">
+    const links=socs.length
+      ?socs.map(s=>`<a href="${s.url}" target="_blank" rel="noopener" class="pub-lnk">
           <div class="pub-lic ${s.ic}"><i class="${s.icon}"></i></div>
-          <div><div style="font-size:.88rem;font-weight:800">${s.label}</div>
-               <div style="font-size:.74rem;opacity:.65">@${s.sub}</div></div>
-          <i class="fas fa-arrow-up-right-from-square" style="margin-left:auto;opacity:.45;font-size:.72rem"></i>
+          <div><div style="font-weight:700">${s.lbl}</div><div style="font-size:.74rem;opacity:.65">@${s.sub}</div></div>
+          <i class="fas fa-arrow-up-right-from-square" style="margin-${lang==='ku'?'right':'left'}:auto;opacity:.4;font-size:.72rem"></i>
         </a>`).join('')
-      : `<p style="text-align:center;opacity:.45;font-size:.88rem;padding:20px">No links added yet</p>`;
+      :`<p style="text-align:center;opacity:.4;font-size:.86rem;padding:18px">${lang==='ku'?'هیچ لینکێک زیادنەکراوە':'No links added yet'}</p>`;
     document.getElementById('app').innerHTML=`
-      <div class="pub-pg" style="${cssVars};background:${tpl.v['--p-bg']}">
+      <div class="pub-pg" style="${css}">
+        <div class="pub-bgimg" style="background-image:url('${tpl.img}')"></div>
+        <div class="pub-bgoverlay" style="background:${tpl.v['--p-bg']}"></div>
         <div class="pub-in">
           <div class="pub-hd">
             <div class="pub-av">${init}</div>
@@ -1127,236 +1088,183 @@ async function renderPub(username){
             ${p.bio?`<div class="pub-bio">${esc(p.bio)}</div>`:''}
           </div>
           <div class="pub-links">${links}</div>
-          <div class="pub-ft">Made with <a href="${location.origin}${location.pathname}" target="_blank">Profilo ✨</a></div>
+          <div class="pub-ft">${t('madeWith')} <a href="${location.origin}${location.pathname}" target="_blank">${t('appName')} ✨</a></div>
         </div>
       </div>`;
-  } catch(e){ console.error(e); document.getElementById('app').innerHTML='<div class="pg-ld"><p style="color:var(--err)">Failed to load profile.</p></div>' }
+  }catch(e){console.error(e);document.getElementById('app').innerHTML='<div class="pg-ld"><p style="color:var(--err)">Failed to load.</p></div>'}
 }
 function notFound(un){
-  document.getElementById('app').innerHTML=`
-    <div class="pg-ld" style="flex-direction:column;gap:14px">
-      <div style="font-size:4rem">😕</div>
-      <h2>Profile not found</h2>
-      <p class="tm">${un?`@${un} doesn't exist`:'No username provided'}</p>
-      <a href="#/" class="btn btn-s">← Go to Profilo</a>
-    </div>`;
+  document.getElementById('app').innerHTML=`<div class="pg-ld" style="flex-direction:column;gap:12px">
+    <div style="font-size:3.5rem">😕</div>
+    <h2>${lang==='ku'?'بڕوانامە نەدۆزرایەوە':'Profile not found'}</h2>
+    ${un?`<p class="tm">@${un}</p>`:''}
+    <a href="#/" class="btn btn-s">← ${t('back')}</a></div>`;
 }
 
-/* ═══════════════════════════════════════════
+/* ══════════════════════════════════════
    PAYMENT PAGE
-═══════════════════════════════════════════ */
-function renderPay(type, tplId){
-  payFile=null; payMethod='fastpay';
-  const isTpl=type==='template';
-  const tpl=isTpl?getTpl(tplId):null;
-  const title=isTpl?`Unlock ${tpl?.em} ${tpl?.nm} Template`:'Get Extra Profile Slots';
+══════════════════════════════════════ */
+function renderPay(type,tplId){
+  payFile=null;payMethod='fastpay';
+  const isTpl=type==='template',tpl=isTpl?getTpl(tplId):null;
+  const title=isTpl?`${t('unlockTemplate')}: ${tpl?.em} ${tpl?.nm}`:t('unlockMoreBtn');
   const price=isTpl?TPL_PRICE:XTRA_PRICE;
-  const desc=isTpl
-    ?`Pay ${price} to unlock the ${tpl?.nm} template permanently.`
-    :`Pay ${price} to unlock 2 extra profile slots (total 4).`;
   document.getElementById('app').innerHTML=navbar()+`
-  <div class="pay-pg"><div class="wrap">
-    <div class="pg-hd">
-      <div class="pg-back" onclick="history.back()"><i class="fas fa-arrow-left"></i> Back</div>
-      <div class="pg-h1">💳 Payment</div>
-      <div class="pg-hint">${title}</div>
-    </div><br>
+  <div class="pg"><div class="wrap">
+    <div class="pg-hd"><button class="pg-back" onclick="history.back()"><i class="fas fa-arrow-left"></i> ${t('back')}</button>
+      <div class="pg-h1">💳 ${t('payment')}</div><div class="pg-hint">${title}</div></div><br>
     <div class="pay-box">
-      <div class="pay-ttl">Amount to Pay</div>
+      <div class="pay-ttl">${t('amountToPay')}</div>
       <div class="pay-num">${price}</div>
-      <div class="ts tm mt2">${desc}</div>
     </div>
-    <div class="pay-steps">
-      <div class="pay-step"><div class="ps-n">1</div>
-        <div class="ps-t">Send <strong>${price}</strong> to <strong style="color:var(--primary)">${ADMIN_PHONE}</strong> via FastPay or FIB</div></div>
-      <div class="pay-step"><div class="ps-n">2</div>
-        <div class="ps-t">Fill in your details and upload the payment screenshot below</div></div>
-      <div class="pay-step"><div class="ps-n">3</div>
-        <div class="ps-t">Click Submit — WhatsApp will open to confirm your payment to the admin</div></div>
+    <div class="mb4">
+      <div class="pay-step"><div class="ps-n">1</div><div class="ps-t">${t('payStep1').replace('{p}',`<strong>${price}</strong>`).replace('{n}',`<strong style="color:var(--primary)">${ADMIN_PHONE}</strong>`)}</div></div>
+      <div class="pay-step"><div class="ps-n">2</div><div class="ps-t">${t('payStep2')}</div></div>
+      <div class="pay-step"><div class="ps-n">3</div><div class="ps-t">${t('payStep3')}</div></div>
     </div>
-    <div class="div"></div>
-    <div class="fg"><label class="lbl">Full Name *</label>
-      <input class="fi" type="text" id="py-nm" placeholder="Your full name"/></div>
-    <div class="fg"><label class="lbl">Phone Number *</label>
+    <div class="divl"></div>
+    <div class="fg"><label class="lbl">${t('fullName')} *</label>
+      <input class="fi" type="text" id="py-nm" placeholder="${lang==='ku'?'ناوی تەواو':'Your full name'}"/></div>
+    <div class="fg"><label class="lbl">${lang==='ku'?'ژمارەی تەلەفۆن':'Phone Number'} *</label>
       <input class="fi" type="tel" id="py-ph" placeholder="07xx xxx xxxx"/></div>
-    <div class="fg"><label class="lbl">Payment Method *</label>
+    <div class="fg"><label class="lbl">${t('payMethod')} *</label>
       <div class="mth-sel">
         <button class="mth-btn on" id="mf" onclick="selMth('fastpay')">⚡ FastPay</button>
         <button class="mth-btn" id="mfib" onclick="selMth('fib')">🏦 FIB</button>
       </div></div>
-    <div class="fg"><label class="lbl">Payment Screenshot *</label>
+    <div class="fg"><label class="lbl">${t('payScreen')} *</label>
       <div class="upd" id="upd-area">
         <input type="file" id="py-file" accept="image/*" onchange="onFile(event)"/>
         <div id="upd-ph">
-          <i class="fas fa-cloud-arrow-up" style="font-size:2rem;color:var(--muted);display:block;margin-bottom:8px"></i>
-          <p class="ts tm">Tap to upload screenshot</p>
-          <p style="font-size:.72rem;color:var(--muted);margin-top:4px">JPG or PNG</p>
+          <i class="fas fa-cloud-arrow-up" style="font-size:1.8rem;color:var(--muted);display:block;margin-bottom:7px"></i>
+          <p class="ts tm">${t('tapUpload')}</p>
+          <p style="font-size:.7rem;color:var(--muted);margin-top:3px">${t('jpgpng')}</p>
         </div>
         <img id="upd-prev"/>
       </div></div>
     <button class="btn btn-ok btn-blk btn-lg" id="py-btn" onclick="hPaySubmit('${type}','${tplId||''}')">
-      <i class="fab fa-whatsapp"></i> Submit & Open WhatsApp</button>
+      <i class="fab fa-whatsapp"></i> ${t('submitWA')}</button>
     <br><br>
   </div></div>`;
 }
-function selMth(m){
-  payMethod=m;
-  document.getElementById('mf').classList.toggle('on',m==='fastpay');
-  document.getElementById('mfib').classList.toggle('on',m==='fib');
-}
+function selMth(m){payMethod=m;document.getElementById('mf').classList.toggle('on',m==='fastpay');document.getElementById('mfib').classList.toggle('on',m==='fib')}
 function onFile(e){
-  const f=e.target.files[0]; if(!f) return;
-  payFile=f;
-  const pr=document.getElementById('upd-prev');
-  const ph=document.getElementById('upd-ph');
-  pr.src=URL.createObjectURL(f); pr.style.display='block'; ph.style.display='none';
+  const f=e.target.files[0];if(!f)return;payFile=f;
+  const pr=document.getElementById('upd-prev'),ph=document.getElementById('upd-ph');
+  pr.src=URL.createObjectURL(f);pr.style.display='block';ph.style.display='none';
 }
 async function hPaySubmit(type,tplId){
-  const nm=v('py-nm'), ph=v('py-ph');
-  if(!nm){toast('Enter your name.','w');return}
-  if(!ph){toast('Enter your phone number.','w');return}
-  if(!payFile){toast('Upload payment screenshot.','w');return}
+  const nm=v('py-nm'),ph=v('py-ph');
+  if(!nm){toast(t('nameReq'),'w');return}
+  if(!ph){toast(t('phoneReq'),'w');return}
+  if(!payFile){toast(t('ssReq'),'w');return}
   const btn=document.getElementById('py-btn');
-  btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Processing…';
+  btn.disabled=true;btn.innerHTML=`<i class="fas fa-spinner fa-spin"></i> ${lang==='ku'?'دەنێردرێت…':'Processing…'}`;
   const oid=await submitPayment({nm,ph,method:payMethod,type,tplId:tplId||null,file:payFile});
-  if(oid){ btn.innerHTML='✅ Submitted!'; setTimeout(()=>go('dashboard'),2200) }
-  else{ btn.disabled=false; btn.innerHTML='<i class="fab fa-whatsapp"></i> Submit & Open WhatsApp' }
+  if(oid){btn.innerHTML='✅ '+t('submitted');setTimeout(()=>go('dashboard'),2200)}
+  else{btn.disabled=false;btn.innerHTML=`<i class="fab fa-whatsapp"></i> ${t('submitWA')}`}
 }
 
-/* ═══════════════════════════════════════════
+/* ══════════════════════════════════════
    ADMIN PANEL
-═══════════════════════════════════════════ */
-let aTab='orders';
+══════════════════════════════════════ */
 async function renderAdmin(){
-  if(!S.ud?.isAdmin){ go('dashboard'); return }
+  if(!S.ud?.isAdmin){go('dashboard');return}
   document.getElementById('app').innerHTML=navbar()+`
-  <div class="adm-pg"><div class="wrap-lg">
-    <div class="pg-hd"><div class="pg-h1">⚙️ Admin Panel</div><div class="pg-hint">Manage users, orders & profiles</div></div><br>
-    <div id="adm-st"><div class="pg-ld" style="min-height:100px"><div class="spin"></div></div></div>
+  <div class="pg"><div class="wrap-lg">
+    <div class="pg-hd" style="padding:20px 0 14px"><div class="pg-h1">⚙️ ${t('adminPanel')}</div>
+      <div class="pg-hint">${t('manageAll')}</div></div>
+    <div id="adm-st"><div class="pg-ld" style="min-height:80px"><div class="spin"></div></div></div>
     <div class="adm-tabs">
-      <button class="at-btn on" id="atab-orders"   onclick="swAdmTab('orders')">📦 Orders</button>
-      <button class="at-btn"    id="atab-users"    onclick="swAdmTab('users')">👥 Users</button>
-      <button class="at-btn"    id="atab-profiles" onclick="swAdmTab('profiles')">🔮 Profiles</button>
+      <button class="at-btn on" id="atab-orders"   onclick="swAdmTab('orders')">${t('orders')}</button>
+      <button class="at-btn"   id="atab-users"     onclick="swAdmTab('users')">${t('users')}</button>
+      <button class="at-btn"   id="atab-profiles"  onclick="swAdmTab('profiles')">${t('profiles')}</button>
     </div>
-    <div id="adm-ct"><div class="pg-ld" style="min-height:100px"><div class="spin"></div></div></div>
+    <div id="adm-ct"><div class="pg-ld" style="min-height:80px"><div class="spin"></div></div></div>
+    <br><br>
   </div></div>`;
   try{
-    const [us,os,ps]=await Promise.all([
-      db.collection('users').get(),
-      db.collection('orders').get(),
-      db.collection('profiles').get()
-    ]);
-    const pending=os.docs.filter(d=>d.data().status==='pending').length;
-    document.getElementById('adm-st').innerHTML=`
-      <div class="adm-stats">
-        <div class="st-card"><div class="st-n">${us.size}</div><div class="st-l">Users</div></div>
-        <div class="st-card"><div class="st-n">${ps.size}</div><div class="st-l">Profiles</div></div>
-        <div class="st-card"><div class="st-n">${os.size}</div><div class="st-l">Orders</div></div>
-        <div class="st-card"><div class="st-n" style="color:var(--warn)">${pending}</div><div class="st-l">Pending</div></div>
-      </div>`;
-  } catch(e){}
+    const[us,os,ps]=await Promise.all([db.collection('users').get(),db.collection('orders').get(),db.collection('profiles').get()]);
+    const pend=os.docs.filter(d=>d.data().status==='pending').length;
+    document.getElementById('adm-st').innerHTML=`<div class="adm-stats">
+      <div class="st-card"><div class="st-n">${us.size}</div><div class="st-l">${t('users')}</div></div>
+      <div class="st-card"><div class="st-n">${ps.size}</div><div class="st-l">${t('profiles')}</div></div>
+      <div class="st-card"><div class="st-n">${os.size}</div><div class="st-l">${t('orders')}</div></div>
+      <div class="st-card"><div class="st-n" style="color:var(--warn)">${pend}</div><div class="st-l">${lang==='ku'?'چاوەڕوان':'Pending'}</div></div>
+    </div>`;
+  }catch(e){}
   loadAdmTab('orders');
 }
-function swAdmTab(t){
-  aTab=t;
+function swAdmTab(tab){
   document.querySelectorAll('.at-btn').forEach(b=>b.classList.remove('on'));
-  document.getElementById('atab-'+t)?.classList.add('on');
-  document.getElementById('adm-ct').innerHTML='<div class="pg-ld" style="min-height:80px"><div class="spin"></div></div>';
-  loadAdmTab(t);
+  document.getElementById('atab-'+tab)?.classList.add('on');
+  document.getElementById('adm-ct').innerHTML='<div class="pg-ld" style="min-height:70px"><div class="spin"></div></div>';
+  loadAdmTab(tab);
 }
-async function loadAdmTab(t){
+async function loadAdmTab(tab){
   const el=document.getElementById('adm-ct');
   try{
-    if(t==='orders'){
+    if(tab==='orders'){
       const s=await db.collection('orders').orderBy('createdAt','desc').limit(80).get();
       const rows=s.docs.map(d=>d.data());
-      if(!rows.length){ el.innerHTML='<div class="empty"><div class="empty-e">📭</div><div class="empty-t">No orders yet</div></div>'; return }
+      if(!rows.length){el.innerHTML=`<div class="empty"><div class="empty-e">📭</div><div class="empty-t">${t('noOrders')}</div></div>`;return}
       el.innerHTML=`<div class="tbl-wrap"><table class="dt">
-        <thead><tr><th>User</th><th>Type</th><th>Method</th><th>Amount</th><th>Status</th><th>Screenshot</th><th>Actions</th></tr></thead>
+        <thead><tr><th>${t('users')}</th><th>Type</th><th>Method</th><th>Amount</th><th>Status</th><th>${t('payScreen')}</th><th>Action</th></tr></thead>
         <tbody>${rows.map(o=>`<tr>
-          <td><div style="font-weight:800;font-size:.85rem">${esc(o.userName||'—')}</div>
-              <div style="font-size:.73rem;color:var(--muted)">${esc(o.userEmail||'—')}</div>
-              <div style="font-size:.7rem;color:var(--muted)">${esc(o.phone||'—')}</div></td>
-          <td style="font-size:.8rem">${o.type==='template'?`🎨 ${o.templateId}`:'➕ Extra Profile'}</td>
-          <td style="font-size:.8rem;font-weight:700">${(o.paymentMethod||'').toUpperCase()}</td>
-          <td style="font-size:.8rem;font-weight:800">${o.amount||'—'}</td>
+          <td><div style="font-weight:700;font-size:.82rem">${esc(o.userName||'—')}</div>
+              <div style="font-size:.7rem;color:var(--muted)">${esc(o.userEmail||'—')}</div>
+              <div style="font-size:.68rem;color:var(--muted)">${esc(o.phone||'—')}</div></td>
+          <td style="font-size:.78rem">${o.type==='template'?`🎨 ${o.templateId}`:'➕ Extra'}</td>
+          <td style="font-size:.78rem;font-weight:700">${(o.paymentMethod||'').toUpperCase()}</td>
+          <td style="font-weight:800;font-size:.82rem">${o.amount||'—'}</td>
           <td><span class="sb sb-${o.status==='approved'?'ok':o.status==='rejected'?'rej':'pend'}">${o.status}</span></td>
-          <td>${o.screenshotBase64
-            ?`<img src="${o.screenshotBase64}"
-                style="width:52px;height:52px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid var(--border)"
-                onclick="viewImg(this.src)" title="Click to enlarge"/>`
-            :'—'}</td>
-          <td>${o.status==='pending'?`<div style="display:flex;gap:6px">
+          <td>${o.screenshotBase64?`<img src="${o.screenshotBase64}" style="width:46px;height:46px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid var(--border)" onclick="viewImg(this.src)"/>`:'—'}</td>
+          <td>${o.status==='pending'?`<div style="display:flex;gap:5px">
             <button class="btn btn-ok btn-sm" onclick="admApprove('${o.id}','${o.userId}','${o.type}','${o.templateId||''}')">✓</button>
-            <button class="btn btn-d btn-sm" onclick="admReject('${o.id}')">✗</button>
-          </div>`:'—'}</td>
-        </tr>`).join('')}
-        </tbody></table></div>`;
-    } else if(t==='users'){
+            <button class="btn btn-d btn-sm" onclick="admReject('${o.id}')">✗</button></div>`:'—'}</td>
+        </tr>`).join('')}</tbody></table></div>`;
+    }else if(tab==='users'){
       const s=await db.collection('users').get();
       const rows=s.docs.map(d=>({uid:d.id,...d.data()}));
       el.innerHTML=`<div class="tbl-wrap"><table class="dt">
-        <thead><tr><th>Name</th><th>Email</th><th>Profiles</th><th>Extra</th><th>Unlocked Templates</th></tr></thead>
+        <thead><tr><th>${lang==='ku'?'ناو':'Name'}</th><th>${t('email')}</th><th>${t('profiles')}</th><th>Extra</th><th>Templates</th></tr></thead>
         <tbody>${rows.map(u=>`<tr>
-          <td style="font-weight:800">${esc(u.displayName||'—')}</td>
-          <td style="font-size:.8rem">${esc(u.email||'—')}</td>
+          <td style="font-weight:700">${esc(u.displayName||'—')}</td>
+          <td style="font-size:.78rem">${esc(u.email||'—')}</td>
           <td style="text-align:center">${u.profileCount||0}</td>
-          <td style="text-align:center">${u.extraProfilesPaid?'<span class="sb sb-ok">Yes</span>':'—'}</td>
-          <td style="font-size:.75rem">${(u.unlockedTemplates||[]).join(', ')||'—'}</td>
-        </tr>`).join('')}
-        </tbody></table></div>`;
-    } else {
+          <td style="text-align:center">${u.extraProfilesPaid?`<span class="sb sb-ok">${t('unlocked')}</span>`:'—'}</td>
+          <td style="font-size:.72rem">${(u.unlockedTemplates||[]).join(', ')||'—'}</td>
+        </tr>`).join('')}</tbody></table></div>`;
+    }else{
       const s=await db.collection('profiles').get();
       const rows=s.docs.map(d=>({id:d.id,...d.data()}));
       el.innerHTML=`<div class="tbl-wrap"><table class="dt">
-        <thead><tr><th>Username</th><th>Display Name</th><th>Template</th><th>User ID</th><th>View</th></tr></thead>
+        <thead><tr><th>${lang==='ku'?'ناوی بەکارهێنەر':'Username'}</th><th>${t('displayName')}</th><th>Template</th><th>User ID</th><th></th></tr></thead>
         <tbody>${rows.map(p=>{const tp=getTpl(p.template);return`<tr>
           <td><strong>@${p.username}</strong></td>
           <td>${esc(p.displayName||'—')}</td>
           <td>${tp.em} ${tp.nm}</td>
-          <td style="font-size:.7rem;color:var(--muted);font-family:monospace">${(p.userId||'').slice(0,12)}…</td>
+          <td style="font-size:.68rem;color:var(--muted);font-family:monospace">${(p.userId||'').slice(0,12)}…</td>
           <td><a href="#/p/${p.username}" target="_blank" class="btn btn-g btn-sm"><i class="fas fa-eye"></i></a></td>
-        </tr>`}).join('')}
-        </tbody></table></div>`;
+        </tr>`}).join('')}</tbody></table></div>`;
     }
-  } catch(e){
-    console.error(e);
-    el.innerHTML='<div class="empty"><div class="empty-e">❌</div><div class="empty-t">Failed to load</div></div>';
+  }catch(e){
+    el.innerHTML=`<div class="empty"><div class="empty-e">❌</div><div class="empty-t">${t('noNet')}</div></div>`;
   }
 }
 async function admApprove(oid,uid,type,tplId){
   try{
     const b=db.batch();
     b.update(db.collection('orders').doc(oid),{status:'approved'});
-    if(type==='template'&&tplId)
-      b.update(db.collection('users').doc(uid),{unlockedTemplates:firebase.firestore.FieldValue.arrayUnion(tplId)});
-    else if(type==='extra-profile')
-      b.update(db.collection('users').doc(uid),{extraProfilesPaid:true});
-    await b.commit();
-    toast('Order approved! ✅','s'); loadAdmTab('orders');
-  } catch(e){ toast('Failed to approve.','e') }
+    if(type==='template'&&tplId)b.update(db.collection('users').doc(uid),{unlockedTemplates:firebase.firestore.FieldValue.arrayUnion(tplId)});
+    else if(type==='extra-profile')b.update(db.collection('users').doc(uid),{extraProfilesPaid:true});
+    await b.commit();toast(t('orderOk'),'s');loadAdmTab('orders');
+  }catch(e){console.error('admApprove:',e);toast('Approve failed: '+(e.message||e.code||'permission error. Check Firestore rules.'),'e')}
 }
 async function admReject(oid){
-  try{
-    await db.collection('orders').doc(oid).update({status:'rejected'});
-    toast('Order rejected.','i'); loadAdmTab('orders');
-  } catch(e){ toast('Failed to reject.','e') }
+  try{await db.collection('orders').doc(oid).update({status:'rejected'});toast(t('orderRej'),'i');loadAdmTab('orders')}
+  catch(e){console.error('admReject:',e);toast('Reject failed: '+(e.message||e.code||''),'e')}
 }
-
-/* ── view full screenshot in modal ── */
-function viewImg(src){
-  modal(`
-    <button class="mcl" onclick="closeMdl()"><i class="fas fa-times"></i></button>
-    <div class="mttl">Payment Screenshot</div>
-    <img src="${src}" style="width:100%;border-radius:var(--r-md);margin-top:4px"/>
-  `);
-}
-
-/* ═══════════════════════════════════════════
-   HELPERS
-═══════════════════════════════════════════ */
-const v=id=>(document.getElementById(id)?.value||'').trim();
-const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 </script>
 </body>
 </html>
